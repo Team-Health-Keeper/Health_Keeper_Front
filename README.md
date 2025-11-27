@@ -96,16 +96,20 @@ git push origin feature/login-ui
 
 ---
 
-<!-- 환경 변수 추가되면 다시 사용 -->
+## 7. 환경 변수
 
-<!-- ## 7. 환경 변수
+### 소셜 로그인 (OAuth) 관련
 
 ```
-VITE_API_BASE_URL=...
+# Kakao
+VITE_KAKAO_CLIENT_ID=...
+VITE_KAKAO_REDIRECT_URI=...
+
+# Naver
+VITE_NAVER_CLIENT_ID=...
+VITE_NAVER_REDIRECT_URI=...
+
+# Google
+VITE_GOOGLE_CLIENT_ID=...
+VITE_GOOGLE_REDIRECT_URI=...
 ```
-
-코드에서:
-
-````
-import.meta.env.VITE_API_BASE_URL
-``` -->
