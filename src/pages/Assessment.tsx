@@ -1,0 +1,362 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Activity, Video } from "lucide-react"
+import { Link } from "react-router-dom"
+import { YoutubeModal } from "@/components/youtube-modal"
+import { SiteHeader } from "@/components/site-header"
+
+const ageGroupMeasurements = {
+  유아기: {
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
+    "9": "윗몸말아올리기(회)",
+    "12": "앉아윗몸앞으로굽히기(cm)",
+    "18": "BMI(kg/㎡)",
+    "20": "왕복오래달리기(회)",
+    "22": "제자리 멀리뛰기(cm)",
+    "28": "상대악력(%)",
+    "50": "5m 4회 왕복달리기(초)",
+    "51": "3×3 버튼누르기(초)",
+  },
+  유소년: {
+    "4": "허리둘레(cm)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
+    "9": "윗몸말아올리기(회)",
+    "12": "앉아윗몸앞으로굽히기(cm)",
+    "18": "BMI(kg/㎡)",
+    "20": "왕복오래달리기(회)",
+    "22": "제자리 멀리뛰기(cm)",
+    "28": "상대악력(%)",
+    "42": "허리둘레-신장비(WHtR)",
+    "43": "반복옆뛰기(회)",
+    "44": "눈-손 협응력(벽패스)(초)",
+  },
+  청소년: {
+    "1": "신장(cm)",
+    "2": "체중(kg)",
+    "3": "체지방율(%)",
+    "5": "이완기혈압_최저(mmHg)",
+    "6": "수축기혈압_최고(mmHg)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
+    "9": "윗몸말아올리기(회)",
+    "10": "반복점프(회)",
+    "12": "앉아윗몸앞으로굽히기(cm)",
+    "13": "일리노이(초)",
+    "14": "체공시간(초)",
+    "15": "협응력시간(초)",
+    "16": "협응력실수횟수(회)",
+    "17": "협응력계산결과값(초)",
+    "18": "BMI(kg/㎡)",
+    "20": "왕복오래달리기(회)",
+    "22": "제자리 멀리뛰기(cm)",
+    "28": "상대악력(%)",
+    "30": "왕복오래달리기출력(VO₂max)",
+  },
+  성인: {
+    "1": "신장(cm)",
+    "2": "체중(kg)",
+    "3": "체지방율(%)",
+    "4": "허리둘레(cm)",
+    "5": "이완기혈압_최저(mmHg)",
+    "6": "수축기혈압_최고(mmHg)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
+    "12": "앉아윗몸앞으로굽히기(cm)",
+    "18": "BMI(kg/㎡)",
+    "19": "교차윗몸일으키기(회)",
+    "22": "제자리 멀리뛰기(cm)",
+    "28": "상대악력(%)",
+    "36": "스텝검사_회복시 심박수(bpm)",
+    "37": "스텝검사_출력(VO₂max)",
+    "40": "반응시간(초)",
+  },
+  어르신: {
+    "3": "체지방률(%)",
+    "4": "허리둘레(cm)",
+    "5": "이완기최저혈압(mmHg)",
+    "6": "수축기최고혈압(mmHg)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
+    "12": "앉아윗몸앞으로굽히기(cm)",
+    "18": "BMI(kg/㎡)",
+    "23": "의자에앉았다일어서기(회)",
+    "25": "2분제자리걷기(회)",
+    "26": "의자에앉아 3M표적 돌아오기(초)",
+    "27": "8자보행(초)",
+    "28": "상대악력(%)",
+    "52": "절대악력(kg)",
+  },
+}
+
+const requiredMeasurementIds = [
+  "1",
+  "2",
+  "4",
+  "18",
+  "7",
+  "8",
+  "28",
+  "52",
+  "9",
+  "12",
+  "19",
+  "23",
+  "10",
+  "14",
+  "21",
+  "22",
+  "40",
+  "41",
+  "20",
+  "24",
+  "25",
+  "15",
+  "16",
+  "17",
+  "26",
+  "27",
+  "43",
+  "44",
+]
+
+export default function AssessmentPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
+  const [age, setAge] = useState("")
+  const [gender, setGender] = useState("")
+  const [height, setHeight] = useState("")
+  const [weight, setWeight] = useState("")
+  const [waist, setWaist] = useState("")
+  const [bmi, setBmi] = useState("")
+
+  const [ageGroup, setAgeGroup] = useState<string>("")
+  const [showMeasurements, setShowMeasurements] = useState(false)
+
+  const [measurementValues, setMeasurementValues] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!age) {
+      setAgeGroup("")
+      return
+    }
+
+    const ageNum = Number.parseInt(age)
+    if (ageNum >= 4 && ageNum <= 6) {
+      setAgeGroup("유아기")
+    } else if (ageNum >= 11 && ageNum <= 12) {
+      setAgeGroup("유소년")
+    } else if (ageNum >= 13 && ageNum <= 18) {
+      setAgeGroup("청소년")
+    } else if (ageNum >= 19 && ageNum <= 64) {
+      setAgeGroup("성인")
+    } else if (ageNum >= 65) {
+      setAgeGroup("어르신")
+    } else {
+      setAgeGroup("")
+    }
+  }, [age])
+
+  useEffect(() => {
+    const isBasicInfoComplete = age && gender && height && weight && waist && bmi
+    setShowMeasurements(!!isBasicInfoComplete)
+
+    if (!isBasicInfoComplete) {
+      setMeasurementValues({})
+    }
+  }, [age, gender, height, weight, waist, bmi])
+
+  const currentMeasurements = ageGroup ? ageGroupMeasurements[ageGroup as keyof typeof ageGroupMeasurements] : {}
+
+  const updateMeasurementValue = (id: string, value: string) => {
+    setMeasurementValues((prev) => ({
+      ...prev,
+      [id]: value,
+    }))
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <SiteHeader />
+
+      <div className="mx-auto max-w-7xl px-4 py-12">
+        <div className="mx-auto max-w-3xl">
+          {/* Page Header */}
+          <div className="mb-8 text-center">
+            <Badge className="mb-4 bg-primary/10 text-primary">체력 측정</Badge>
+            <h1 className="mb-4 text-balance text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
+              체력 측정 항목 입력
+            </h1>
+            <p className="text-pretty text-lg text-muted-foreground">
+              아래 항목들을 입력하면 AI가 체력 등급을 분석합니다
+            </p>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>기본 정보</CardTitle>
+              <CardDescription>체력 분석에 필요한 기본 정보를 입력해주세요 (모든 항목 필수)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="age">만 나이 *</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    placeholder="예: 30"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">성별 *</Label>
+                  <select
+                    id="gender"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                  >
+                    <option value="">선택하세요</option>
+                    <option value="male">남성</option>
+                    <option value="female">여성</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="height">신장 (cm) *</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    step="0.1"
+                    placeholder="예: 170.5"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weight">체중 (kg) *</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.1"
+                    placeholder="예: 65.5"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="waist">허리둘레 (cm) *</Label>
+                  <Input
+                    id="waist"
+                    type="number"
+                    step="0.1"
+                    placeholder="예: 80.0"
+                    value={waist}
+                    onChange={(e) => setWaist(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bmi">BMI (kg/㎡) *</Label>
+                  <Input
+                    id="bmi"
+                    type="number"
+                    step="0.1"
+                    placeholder="예: 22.5"
+                    value={bmi}
+                    onChange={(e) => setBmi(e.target.value)}
+                  />
+                </div>
+              </div>
+              {ageGroup && (
+                <div className="rounded-md bg-primary/10 p-4">
+                  <p className="text-sm font-medium text-primary">
+                    연령대: {ageGroup} (만 {age}세)
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {showMeasurements && ageGroup && Object.keys(currentMeasurements).length > 0 && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>측정 항목</CardTitle>
+                <CardDescription>
+                  {ageGroup} 연령대에 해당하는 측정 항목입니다. 필수 항목은 반드시 입력해주세요.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {Object.entries(currentMeasurements).map(([id, name]) => {
+                    const isRequired = requiredMeasurementIds.includes(id)
+                    return (
+                      <div key={id} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={`measurement-${id}`}>
+                            {name} {isRequired && <span className="text-destructive">*필수</span>}
+                          </Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 bg-transparent"
+                            onClick={() => setSelectedVideo("dQw4w9WgXcQ")}
+                          >
+                            <Video className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Input
+                          id={`measurement-${id}`}
+                          type="number"
+                          step="0.1"
+                          placeholder="값 입력"
+                          value={measurementValues[id] || ""}
+                          onChange={(e) => updateMeasurementValue(id, e.target.value)}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!showMeasurements && (
+            <Card className="mt-6">
+              <CardContent className="py-8">
+                <p className="text-center text-muted-foreground">기본 정보를 모두 입력하면 측정 항목이 표시됩니다.</p>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="mt-6 flex justify-end gap-4">
+            <Button variant="outline" asChild>
+              <Link to="/">취소</Link>
+            </Button>
+            <Button size="lg" asChild disabled={!showMeasurements}>
+              <Link to="/results">
+                <Activity className="mr-2 h-5 w-5" />
+                AI 분석 시작
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {selectedVideo && (
+        <YoutubeModal videoId={selectedVideo} isOpen={!!selectedVideo} onClose={() => setSelectedVideo(null)} />
+      )}
+    </div>
+  )
+}
