@@ -11,6 +11,72 @@ interface KakaoLoginModalProps {
 
 export function KakaoLoginModal({ isOpen, onClose, onLoginSuccess }: KakaoLoginModalProps) {
   const handleLogin = (type: "kakao" | "naver" | "google") => {
+    if (type === "kakao") {
+      // Read Vite-provided env variables (client-side public vars must be prefixed with VITE_)
+      const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID
+      const redirectUri = import.meta.env.VITE_KAKAO_REDIRECT_URI
+
+      if (!clientId || !redirectUri) {
+        const msg =
+          "Kakao env missing: set VITE_KAKAO_CLIENT_ID and VITE_KAKAO_REDIRECT_URI in your frontend .env and restart dev server."
+        console.error(msg)
+        alert(msg)
+        return
+      }
+
+      const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${encodeURIComponent(
+        clientId,
+      )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`
+
+      console.log("Redirecting to Kakao OAuth:", authUrl)
+      window.location.assign(authUrl)
+      return
+    }
+
+    if (type === "naver") {
+      const clientId = import.meta.env.VITE_NAVER_CLIENT_ID
+      const redirectUri = import.meta.env.VITE_NAVER_REDIRECT_URI
+      if (!clientId || !redirectUri) {
+        const msg =
+          "Naver env missing: set VITE_NAVER_CLIENT_ID and VITE_NAVER_REDIRECT_URI in your frontend .env and restart dev server."
+        console.error(msg)
+        alert(msg)
+        return
+      }
+      // Generate CSRF state and store it for later verification if needed
+      const state = Math.random().toString(36).slice(2) + Date.now().toString(36)
+      sessionStorage.setItem("naver_oauth_state", state)
+
+      const authUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${encodeURIComponent(
+        clientId,
+      )}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`
+      console.log("Redirecting to Naver OAuth:", authUrl)
+      window.location.assign(authUrl)
+      return
+    }
+
+    if (type === "google") {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+      const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI
+      if (!clientId || !redirectUri) {
+        const msg =
+          "Google env missing: set VITE_GOOGLE_CLIENT_ID and VITE_GOOGLE_REDIRECT_URI in .env then restart dev server."
+        console.error(msg)
+        alert(msg)
+        return
+      }
+      const state = Math.random().toString(36).slice(2) + Date.now().toString(36)
+      sessionStorage.setItem("google_oauth_state", state)
+      const scope = encodeURIComponent("openid profile email")
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${encodeURIComponent(
+        clientId,
+      )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${encodeURIComponent(state)}&prompt=consent&access_type=offline`
+      console.log("Redirecting to Google OAuth:", authUrl)
+      window.location.assign(authUrl)
+      return
+    }
+
+    // keep the existing mock behavior for other providers
     const userName = "사용자"
     const userData = { name: userName, provider: type }
     sessionStorage.setItem("user", JSON.stringify(userData))

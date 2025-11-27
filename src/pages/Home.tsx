@@ -26,8 +26,11 @@ export default function Home() {
   const [user, setUser] = useState<{ name: string } | null>(null)
 
   useEffect(() => {
+    const token = sessionStorage.getItem("authToken")
     const storedUser = sessionStorage.getItem("user")
-    if (storedUser) {
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser))
+    } else if (storedUser) {
       setUser(JSON.parse(storedUser))
     }
   }, [])
@@ -60,7 +63,7 @@ export default function Home() {
     setUser(userData)
     sessionStorage.setItem("user", JSON.stringify(userData))
     setLoginModalOpen(false)
-    navigate("/assessment")
+    navigate("/my")
   }
 
   const handleLogout = () => {
@@ -70,8 +73,9 @@ export default function Home() {
   }
 
   const handleGetStarted = () => {
-    const user = typeof window !== "undefined" ? sessionStorage.getItem("user") : null
-    if (user) {
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
+    const userStr = typeof window !== "undefined" ? sessionStorage.getItem("user") : null
+    if (token || userStr) {
       navigate("/assessment")
     } else {
       setLoginModalOpen(true)
@@ -80,7 +84,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader showLoginModal={true} onLoginSuccess={handleLoginSuccess} />
+      <SiteHeader />
 
       {/* Main Content */}
       <main className="flex-1">

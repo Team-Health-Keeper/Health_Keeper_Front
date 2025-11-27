@@ -6,11 +6,26 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, Award, BookOpen, TrendingUp, Trophy, Clock, Dumbbell } from "lucide-react"
 import { Link } from "react-router-dom"
 import { SiteHeader } from "@/components/site-header"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export default function MyPage() {
+  const [displayName, setDisplayName] = useState<string>("사용자")
   useEffect(() => {
     window.scrollTo(0, 0)
+  }, [])
+
+  useEffect(() => {
+    const userStr = typeof window !== "undefined" ? sessionStorage.getItem("user") : null
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        if (user?.name && typeof user.name === "string") {
+          setDisplayName(user.name)
+        }
+      } catch (e) {
+        // keep default displayName
+      }
+    }
   }, [])
 
   const generateCalendarData = () => {
@@ -107,11 +122,11 @@ export default function MyPage() {
               <CardContent className="p-6">
                 <div className="mb-4 flex items-start justify-between">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                    김
+                    {displayName?.[0] ?? "유"}
                   </div>
                 </div>
-                <h3 className="mb-1 text-xl font-bold text-foreground">김체력</h3>
-                <p className="mb-4 text-sm text-muted-foreground">김체력님, 환영합니다!</p>
+                <h3 className="mb-1 text-xl font-bold text-foreground">{displayName}</h3>
+                <p className="mb-4 text-sm text-muted-foreground">{displayName}님, 환영합니다!</p>
 
                 <div className="space-y-3 rounded-lg bg-muted/50 p-4">
                   <div className="flex items-center justify-between text-sm">

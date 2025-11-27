@@ -17,9 +17,14 @@ export function SiteHeader() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const token = sessionStorage.getItem("authToken")
       const storedUser = sessionStorage.getItem("user")
-      if (storedUser) {
+      if (token && storedUser) {
         setUser(JSON.parse(storedUser))
+      } else if (storedUser) {
+        setUser(JSON.parse(storedUser))
+      } else {
+        setUser(null)
       }
     }
   }, [])
@@ -35,6 +40,7 @@ export function SiteHeader() {
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("user")
+      sessionStorage.removeItem("authToken")
       setUser(null)
       navigate("/")
     }
@@ -43,7 +49,7 @@ export function SiteHeader() {
   const handleLoginSuccess = (userData: { name: string; provider: string }) => {
     setUser(userData)
     setIsLoginModalOpen(false)
-    navigate("/assessment")
+    navigate("/my")
   }
 
   const handleHomeClick = (e: React.MouseEvent) => {

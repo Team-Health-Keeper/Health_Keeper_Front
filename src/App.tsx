@@ -10,6 +10,7 @@ import MyRecipes from "./pages/MyRecipes";
 import Recipes from "./pages/Recipes";
 import RecipeDetail from "./pages/RecipeDetail";
 import Results from "./pages/Results";
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
       <Route path="/recipes" element={<Recipes />} />
       <Route path="/recipes/:id" element={<RecipeDetail />} />
       <Route path="/results" element={<Results />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
     </Routes>
   );
 }
