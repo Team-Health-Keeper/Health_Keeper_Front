@@ -167,14 +167,26 @@ export default function AssessmentPage() {
     }
   }, [age])
 
+  // Compute BMI from height(cm) and weight(kg) instead of manual input
   useEffect(() => {
-    const isBasicInfoComplete = age && gender && height && weight && waist && bmi
-    setShowMeasurements(!!isBasicInfoComplete)
+    const h = Number.parseFloat(height)
+    const w = Number.parseFloat(weight)
+    if (h > 0 && w > 0) {
+      const bmiVal = w / Math.pow(h / 100, 2)
+      setBmi(bmiVal ? bmiVal.toFixed(1) : "")
+    } else {
+      setBmi("")
+    }
+  }, [height, weight])
+
+  useEffect(() => {
+    const isBasicInfoComplete = !!(age && gender && height && weight && waist)
+    setShowMeasurements(isBasicInfoComplete)
 
     if (!isBasicInfoComplete) {
       setMeasurementValues({})
     }
-  }, [age, gender, height, weight, waist, bmi])
+  }, [age, gender, height, weight, waist])
 
   const currentMeasurements = ageGroup ? ageGroupMeasurements[ageGroup as keyof typeof ageGroupMeasurements] : {}
 
@@ -267,15 +279,8 @@ export default function AssessmentPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bmi">BMI (kg/㎡) *</Label>
-                  <Input
-                    id="bmi"
-                    type="number"
-                    step="0.1"
-                    placeholder="예: 22.5"
-                    value={bmi}
-                    onChange={(e) => setBmi(e.target.value)}
-                  />
+                  <Label htmlFor="bmi">BMI (kg/㎡)</Label>
+                  <Input id="bmi" type="text" value={bmi} readOnly placeholder="신장/체중으로 자동 계산" />
                 </div>
               </div>
               {ageGroup && (
@@ -298,13 +303,17 @@ export default function AssessmentPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  {Object.entries(currentMeasurements).map(([id, name]) => {
+                  {Object.entries(currentMeasurements)
+                    // Exclude basic info fields from measurement inputs: height(1), weight(2), waist(4), BMI(18)
+                    .filter(([id]) => !["1", "2", "4", "18"].includes(id))
+                    .map(([id, name]) => {
+                      const label = String(name)
                     const isRequired = requiredMeasurementIds.includes(id)
                     return (
                       <div key={id} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label htmlFor={`measurement-${id}`}>
-                            {name} {isRequired && <span className="text-destructive">*필수</span>}
+                              {label} {isRequired && <span className="text-destructive">*필수</span>}
                           </Label>
                           <Button
                             type="button"

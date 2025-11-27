@@ -38,12 +38,30 @@ export function SiteHeader() {
   }
 
   const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("user")
-      sessionStorage.removeItem("authToken")
-      setUser(null)
-      navigate("/")
+    const run = async () => {
+      try {
+        const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
+        await fetch("http://localhost:3001/api/auth/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+          body: JSON.stringify({ reason: "user_logout" }),
+        })
+      } catch (e) {
+        console.warn("Logout API failed, proceeding with client cleanup:", e)
+      } finally {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("user")
+          sessionStorage.removeItem("authToken")
+          setUser(null)
+          navigate("/")
+        }
+      }
     }
+    run()
   }
 
   const handleLoginSuccess = (userData: { name: string; provider: string }) => {
