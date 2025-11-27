@@ -27,6 +27,12 @@ export function SiteHeader() {
         setUser(null)
       }
     }
+    // Set CSS variable for header offset (for anchor scroll alignment)
+    const headerEl = document.querySelector('header')
+    if (headerEl) {
+      const h = headerEl.getBoundingClientRect().height
+      document.documentElement.style.setProperty('--header-offset', `${h}px`)
+    }
   }, [])
 
   const handleStartClick = () => {
@@ -93,12 +99,18 @@ export function SiteHeader() {
               !user ? (
                 <>
                   <Link
-                    href="/"
+                    to="/"
                     onClick={handleHomeClick}
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
                     홈
                   </Link>
+                  <a
+                    href="#how-it-works"
+                    className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
+                  >
+                    사용 방법
+                  </a>
                   <a
                     href="#features"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
@@ -106,7 +118,7 @@ export function SiteHeader() {
                     서비스 소개
                   </a>
                   <a
-                    href="#recipes"
+                    href="#recipe"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
                     운동 레시피
@@ -119,28 +131,28 @@ export function SiteHeader() {
                 // Logged in: show page links
                 <>
                   <Link
-                    href="/assessment"
+                    to="/assessment"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
                     체력 측정
                   </Link>
                   <Link
-                    href="/recipes"
+                    to="/recipes"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
                     운동 레시피
                   </Link>
                   <Link
-                    href="/community"
+                    to="/community"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
-                    동호회
+                    커뮤니티
                   </Link>
                   <Link
-                    href="/facilities"
+                    to="/facilities"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
-                    시설찾기
+                    시설 찾기
                   </Link>
                 </>
               )
@@ -149,28 +161,28 @@ export function SiteHeader() {
               user && (
                 <>
                   <Link
-                    href="/assessment"
+                    to="/assessment"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
                     체력 측정
                   </Link>
                   <Link
-                    href="/recipes"
+                    to="/recipes"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
                     운동 레시피
                   </Link>
                   <Link
-                    href="/community"
+                    to="/community"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
-                    동호회
+                    커뮤니티
                   </Link>
                   <Link
-                    href="/facilities"
+                    to="/facilities"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
-                    시설찾기
+                    시설 찾기
                   </Link>
                 </>
               )
@@ -190,7 +202,7 @@ export function SiteHeader() {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
                   <Link
-                    href="/my"
+                    to="/my"
                     className="group flex cursor-pointer items-center hover:!bg-[#0074B7] hover:!text-white"
                   >
                     <User className="mr-2 h-4 w-4 group-hover:!text-white" />

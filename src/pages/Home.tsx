@@ -194,7 +194,7 @@ export default function Home() {
           </section>
 
           {/* How It Works */}
-          <section id="how-it-works" className="fade-in-section bg-white py-20">
+          <section id="how-it-works" className="fade-in-section is-visible bg-white py-20 scroll-mt-[var(--header-offset)]">
             <div className="container mx-auto max-w-6xl px-6">
               <div className="mb-16 text-center">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-[#0074B7]">
@@ -254,7 +254,7 @@ export default function Home() {
           </section>
 
           {/* Features */}
-          <section id="features" className="fade-in-section bg-gray-50 py-20">
+          <section id="features" className="fade-in-section bg-gray-50 py-20 scroll-mt-[var(--header-offset)]">
             <div className="container mx-auto max-w-6xl px-6">
               <div className="mb-16 pt-8 text-center">
                 <h2 className="mb-4 text-balance text-4xl font-bold tracking-tight text-gray-900 lg:text-5xl">
@@ -326,7 +326,7 @@ export default function Home() {
           </section>
 
           {/* Recipe Preview Section */}
-          <section id="recipes" className="fade-in-section bg-white py-20">
+            <section id="recipe" className="fade-in-section is-visible bg-white pt-12 pb-20 scroll-mt-[var(--header-offset)]">
             <div className="container mx-auto max-w-6xl px-6">
               <div className="mb-16 pt-8 text-center">
                 <h2 className="mb-4 text-balance text-4xl font-bold tracking-tight text-gray-900 lg:text-5xl">
@@ -420,7 +420,7 @@ export default function Home() {
           </section>
 
           {/* CTA Section */}
-          <section id="start" className="fade-in-section bg-gradient-to-br from-blue-600 to-blue-700 py-20 text-white">
+          <section id="start" className="fade-in-section bg-gradient-to-br from-blue-600 to-blue-700 py-20 text-white scroll-mt-[var(--header-offset)]">
             <div className="container mx-auto max-w-4xl px-6 text-center">
               <h2 className="mb-6 text-balance text-4xl font-bold tracking-tight lg:text-5xl">지금 바로 시작하세요</h2>
               <p className="mb-10 text-pretty text-xl leading-relaxed text-blue-100">

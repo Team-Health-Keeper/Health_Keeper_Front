@@ -121,6 +121,8 @@
   --sidebar-accent-foreground: oklch(0.25 0.02 250);
   --sidebar-border: oklch(0.93 0.01 240);
   --sidebar-ring: oklch(0.52 0.15 240);
+  /* Default fallback for dynamic sticky header height */
+  --header-offset: 80px;
 }
 
 .dark {
