@@ -22,6 +22,8 @@ function App() {
       <Route path="/my" element={<MyPage />} />
       <Route path="/my/recipes" element={<MyRecipes />} />
       <Route path="/recipes" element={<Recipes />} />
+      {/* Temporary static route for testing specific recipe detail without :id */}
+      <Route path="/recipes/lower-body-strength" element={<RecipeDetail />} />
       <Route path="/recipes/:id" element={<RecipeDetail />} />
       <Route path="/results" element={<Results />} />
       <Route path="/auth/callback" element={<AuthCallback />} />

@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Users, MapPin, Calendar, Search, Filter, Heart, TrendingUp, Star, User2, Info, Loader2 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState, useEffect, useRef } from "react"
-import { ClubDetailModal } from "@/components/club-detail-modal"
 import { SiteHeader } from "@/components/site-header"
 
 export default function ClubsPage() {
@@ -15,17 +14,13 @@ export default function ClubsPage() {
     window.scrollTo(0, 0)
   }, [])
 
-  const [selectedClub, setSelectedClub] = useState<any>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  // Modal removed; show inline details in each card
   const [displayedClubs, setDisplayedClubs] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const observerTarget = useRef<HTMLDivElement>(null)
 
-  const handleViewDetail = (club: any) => {
-    setSelectedClub(club)
-    setIsModalOpen(true)
-  }
+  // Click detail removed
 
   const allClubs = [
     {
@@ -38,20 +33,6 @@ export default function ClubsPage() {
       SEXDSTN_FLAG_NM: "전체",
       MBER_CO: 124,
       FOND_DE: "20200315",
-      CLUB_DETAIL:
-        "매주 2회 강남 일대에서 함께 달리는 러닝 동호회입니다. 초보자부터 마라톤 완주자까지 모두 환영합니다!",
-      RGSTR_NM: "김러닝",
-      RGSTR_TELNO: "010-1234-5678",
-      CLUB_ADRES: "서울특별시 강남구 테헤란로 123",
-      CLUB_LOCPLC_NM: "올림픽공원",
-      ACTV_DAY: "화, 목",
-      ACTV_BEGIN_TM: "0600",
-      ACTV_END_TM: "0730",
-      CLUB_STATE: "활동중",
-      meetings: "주 2회",
-      level: "입문-중급",
-      image: "running club outdoor morning",
-      isPopular: true,
     },
     {
       id: 2,
@@ -63,10 +44,6 @@ export default function ClubsPage() {
       SEXDSTN_FLAG_NM: "전체",
       MBER_CO: 86,
       FOND_DE: "20210520",
-      meetings: "주 3회",
-      level: "전체",
-      image: "yoga meditation group peaceful",
-      isPopular: false,
     },
     {
       id: 3,
@@ -78,10 +55,6 @@ export default function ClubsPage() {
       SEXDSTN_FLAG_NM: "전체",
       MBER_CO: 45,
       FOND_DE: "20220810",
-      meetings: "주 4회",
-      level: "중급-고급",
-      image: "fitness gym workout group",
-      isPopular: true,
     },
     {
       id: 4,
@@ -93,10 +66,6 @@ export default function ClubsPage() {
       SEXDSTN_FLAG_NM: "전체",
       MBER_CO: 203,
       FOND_DE: "20190101",
-      meetings: "주말",
-      level: "전체",
-      image: "hiking mountain group outdoor",
-      isPopular: false,
     },
     {
       id: 5,
@@ -108,10 +77,6 @@ export default function ClubsPage() {
       SEXDSTN_FLAG_NM: "전체",
       MBER_CO: 67,
       FOND_DE: "20210315",
-      meetings: "주 5회",
-      level: "중급",
-      image: "swimming pool group exercise",
-      isPopular: false,
     },
     {
       id: 6,
@@ -123,10 +88,6 @@ export default function ClubsPage() {
       SEXDSTN_FLAG_NM: "전체",
       MBER_CO: 156,
       FOND_DE: "20200701",
-      meetings: "주 2회",
-      level: "입문-중급",
-      image: "cycling bicycle group outdoor",
-      isPopular: true,
     },
   ]
 
@@ -167,6 +128,15 @@ export default function ClubsPage() {
       setDisplayedClubs([...displayedClubs, ...moreClubs])
       setIsLoading(false)
     }, 800)
+  }
+
+  const formatFondDe = (fondDe: string) => {
+    // Expecting YYYYMMDD
+    if (!fondDe || fondDe.length !== 8) return fondDe
+    const year = fondDe.slice(0, 4)
+    const month = fondDe.slice(4, 6).replace(/^0/, "")
+    const day = fondDe.slice(6, 8).replace(/^0/, "")
+    return `${year}년 ${month}월 ${day}일`
   }
 
   return (
@@ -229,16 +199,15 @@ export default function ClubsPage() {
       {/* Stats Section */}
       <section className="border-y bg-white py-12">
         <div className="container mx-auto max-w-6xl px-6">
-          <div className="grid gap-8 md:grid-cols-4">
+          <div className="grid gap-8 md:grid-cols-3">
             {[
               { icon: Users, label: "활성 동호회", value: "2,547개" },
               { icon: User2, label: "전체 회원", value: "15,234명" },
-              { icon: Calendar, label: "이번 주 모임", value: "342회" },
               { icon: TrendingUp, label: "신규 동호회", value: "+28개" },
             ].map((stat, index) => {
               const Icon = stat.icon
               return (
-                <div key={index} className="flex items-center gap-4">
+                <div key={index} className="flex flex-col items-center gap-3 text-center">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
                     <Icon className="h-7 w-7 text-[#0074B7]" />
                   </div>
@@ -258,66 +227,52 @@ export default function ClubsPage() {
         <div className="container mx-auto max-w-6xl px-6">
           <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">추천 동호회</h2>
-            <Button variant="outline" className="gap-2 bg-white">
-              <Filter className="h-4 w-4" />
-              필터
-            </Button>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {displayedClubs.map((club, index) => (
               <Card
                 key={`${club.id}-${index}`}
-                className="group overflow-hidden rounded-2xl border-2 transition-all hover:border-[#0074B7] hover:shadow-xl"
+                className="group overflow-hidden rounded-2xl border-2 transition-all hover:border-[#0074B7] hover:shadow-xl py-0"
               >
-                {/* Club Image */}
-                <div className="relative aspect-video bg-gradient-to-br from-blue-100 to-blue-50">
-                  <img
-                    src={`/.jpg?height=240&width=400&query=${club.image}`}
-                    alt={club.CLUB_NM}
-                    className="h-full w-full object-cover"
-                  />
-                  {club.isPopular && (
-                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-gray-900">
-                      <Star className="h-3 w-3 fill-current" />
-                      인기
-                    </div>
-                  )}
-                  <button className="absolute right-3 bottom-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-colors hover:bg-white">
-                    <Heart className="h-5 w-5 text-gray-700" />
-                  </button>
-                </div>
+                {/* Small spacer at top for visual breathing room */}
+                <div className="relative h-3" />
 
-                <CardHeader className="pb-3">
+                <CardHeader className="px-6 pt-0 pb-2">
                   <div className="mb-2 flex items-center gap-2">
                     <Badge className="bg-[#0074B7] hover:bg-[#005a91]">{club.ITEM_NM}</Badge>
-                    <Badge variant="outline">{club.level}</Badge>
+                    <Badge variant="outline">{club.ITEM_CL_NM}</Badge>
                   </div>
                   <CardTitle className="text-xl font-bold text-gray-900">{club.CLUB_NM}</CardTitle>
                 </CardHeader>
 
-                <CardContent className="space-y-3">
+                <CardContent className="px-6 space-y-3 pb-4">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <MapPin className="h-4 w-4 text-gray-400" />
                     {club.SIGNGU_NM}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    {club.meetings}
+                    설립일자 {formatFondDe(club.FOND_DE)}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4 text-gray-400" />
                     회원 {club.MBER_CO}명
                   </div>
 
-                  <div className="pt-3">
-                    <Button
-                      className="w-full bg-[#0074B7] hover:bg-[#005a91] gap-2"
-                      onClick={() => handleViewDetail(club)}
-                    >
-                      <Info className="h-4 w-4" />
-                      상세 정보
-                    </Button>
+                  <div className="pt-3 space-y-2 text-sm text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-gray-400" />
+                      성별 구분: {club.SEXDSTN_FLAG_NM}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      지역: {club.CTPRVN_NM} {club.SIGNGU_NM}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-gray-400" />
+                      체력 항목: {club.ITEM_CL_NM}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -396,9 +351,7 @@ export default function ClubsPage() {
         </div>
       </footer>
 
-      {selectedClub && (
-        <ClubDetailModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} club={selectedClub} />
-      )}
+      {/* Modal removed */}
     </div>
   )
 }

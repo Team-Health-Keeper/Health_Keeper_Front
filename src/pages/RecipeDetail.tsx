@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Activity, Clock, Play, TrendingUp } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { YouTubeModal } from "@/components/youtube-modal"
 import { SiteHeader } from "@/components/site-header"
@@ -672,7 +672,7 @@ export default function RecipeDetailPage() {
   }, [])
 
   const params = useParams()
-  const id = params?.id as string
+  const id = (params?.id as string) || "lower-body-strength"
   const recipe = id ? recipesData[id] : null
 
   const [selectedVideo, setSelectedVideo] = useState<{ name: string; videoId: string } | null>(null)
@@ -699,7 +699,7 @@ export default function RecipeDetailPage() {
 
   const ExerciseCard = ({ exercise, type }: { exercise: any; type: string }) => (
     <Card
-      className="group cursor-pointer border-border transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 overflow-hidden"
+      className="group cursor-pointer border-border transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 overflow-hidden py-0"
       onClick={() => handleExerciseClick(exercise, type)}
     >
       {/* 썸네일 영역 */}
