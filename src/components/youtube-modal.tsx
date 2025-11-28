@@ -46,17 +46,17 @@ export function YouTubeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="!max-w-none w-[90vw] max-w-[1400px] max-h-[90vh] p-0 overflow-hidden grid grid-rows-[auto_1fr]">
+      <DialogContent className="!max-w-none w-[90vw] max-w-[1400px] max-h-[90vh] p-0 gap-0 overflow-hidden grid grid-rows-[auto_1fr]">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-50 rounded-full bg-white/90 hover:bg-white p-2 shadow-lg transition-all duration-200 hover:scale-110"
+          className="absolute right-4 top-4 z-50 rounded-full bg-white/90 hover:bg-white p-2 shadow-lg transition-all duration-200 hover:scale-110 cursor-pointer"
           aria-label="닫기"
         >
           <X className="h-6 w-6 text-gray-800" />
         </button>
 
         {title && (
-          <DialogHeader className="p-6 pb-4 bg-background z-10">
+          <DialogHeader className="pt-6 pl-6 pr-6 bg-background z-10">
             <DialogTitle>{title}</DialogTitle>
             {playlist.length > 0 && (
               <p className="text-sm text-muted-foreground mt-1">
@@ -70,7 +70,7 @@ export function YouTubeModal({
           {hasPrevious && (
             <Button
               onClick={handlePrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-40 h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg p-0"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-40 h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg p-0 cursor-pointer"
               aria-label="이전 영상"
             >
               <ChevronLeft className="h-6 w-6 text-gray-800" />
@@ -80,7 +80,7 @@ export function YouTubeModal({
           {hasNext && (
             <Button
               onClick={handleNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-40 h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg p-0"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-40 h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg p-0 cursor-pointer"
               aria-label="다음 영상"
             >
               <ChevronRight className="h-6 w-6 text-gray-800" />

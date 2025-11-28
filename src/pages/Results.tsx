@@ -117,6 +117,7 @@ export default function ResultsPage() {
         <img
           src={`https://img.youtube.com/vi/${exercise.videoId}/mqdefault.jpg`}
           alt={exercise.name}
+          loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
@@ -400,6 +401,11 @@ export default function ResultsPage() {
           videoId={selectedVideo.videoId}
           playlist={allExercises}
           currentIndex={selectedVideo.index}
+          onNavigate={(nextIndex) => {
+            if (nextIndex < 0 || nextIndex >= allExercises.length) return
+            const ex = allExercises[nextIndex]
+            setSelectedVideo({ name: ex.name, videoId: ex.videoId, index: nextIndex })
+          }}
         />
       )}
     </div>

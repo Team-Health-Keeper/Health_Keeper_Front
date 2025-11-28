@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, Award, BookOpen, TrendingUp, Trophy, Clock, Dumbbell } from "lucide-react"
 import { Link } from "react-router-dom"
 import { SiteHeader } from "@/components/site-header"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 
 export default function MyPage() {
   const [displayName, setDisplayName] = useState<string>("사용자")
@@ -29,33 +30,101 @@ export default function MyPage() {
   }, [])
 
   const generateCalendarData = () => {
-    const weeks = []
-    const today = new Date()
+    // 정확히 365일 범위를 월(월요일)~일(일요일) 축으로 구성하고,
+    // 가장 오래된 주가 왼쪽, 오늘이 포함된 최신 주가 오른쪽에 오도록 생성
+    const weeks: Array<Array<{
+      intensity: number
+      date: string
+      attendance: boolean
+      videoWatch: boolean
+      fitnessTest: boolean
+    }>> = []
 
-    for (let week = 0; week < 52; week++) {
-      const days = []
-      for (let day = 0; day < 7; day++) {
-        const intensity = Math.random() > 0.7 ? Math.floor(Math.random() * 4) : 0
-        const date = new Date(today)
-        date.setDate(date.getDate() - (51 - week) * 7 - (6 - day))
+    const end = new Date()
+    // 오늘을 기준으로 364일 전이 시작점
+    const start = new Date(end)
+    start.setDate(end.getDate() - 364)
+
+    // 시작 날짜를 해당 주의 월요일로 보정 (월요일=1, 일요일=0/7 취급)
+    const startDay = start.getDay() === 0 ? 7 : start.getDay() // 1..7
+    const startMonday = new Date(start)
+    startMonday.setDate(start.getDate() - (startDay - 1))
+
+    // 52주 구성, 각 주 7일(월~일)
+    for (let w = 0; w < 52; w++) {
+      const days: Array<{
+        intensity: number
+        date: string
+        attendance: boolean
+        videoWatch: boolean
+        fitnessTest: boolean
+      }> = []
+      for (let d = 0; d < 7; d++) {
+        const date = new Date(startMonday)
+        date.setDate(startMonday.getDate() + w * 7 + d)
         const dateStr = date.toISOString().split("T")[0]
+        const intensity = Math.random() > 0.7 ? Math.floor(Math.random() * 4) : 0
         const attendance = intensity > 0
         const videoWatch = Math.random() > 0.4
         const fitnessTest = Math.random() > 0.8
-        days.push({
-          intensity,
-          date: dateStr,
-          attendance,
-          videoWatch,
-          fitnessTest,
-        })
+        days.push({ intensity, date: dateStr, attendance, videoWatch, fitnessTest })
       }
       weeks.push(days)
     }
     return weeks
   }
 
-  const calendarData = generateCalendarData()
+  // 1년치 잔디 데이터는 렌더마다 바뀌지 않도록 메모이즈
+  const calendarData = useMemo(() => generateCalendarData(), [])
+
+  // 상단 월 라벨: 각 주의 시작 날짜 기준 월 표시(깃허브 잔디 유사)
+  const monthLabels = useMemo(() => {
+    const labels: { index: number; text: string }[] = []
+    for (let i = 0; i < calendarData.length; i++) {
+      const week = calendarData[i]
+      if (!week || week.length === 0) continue
+      const firstDateStr = week[0].date
+      const d = new Date(firstDateStr)
+      const month = d.getMonth() + 1
+      const text = `${month}월`
+      // 월이 바뀌는 경계에서만 라벨 추가
+      if (i === 0) {
+        labels.push({ index: i, text })
+      } else {
+        const prevWeek = calendarData[i - 1]
+        const prevD = new Date(prevWeek[0].date)
+        const prevMonth = prevD.getMonth() + 1
+        if (prevMonth !== month) {
+          labels.push({ index: i, text })
+        }
+      }
+    }
+    return labels
+  }, [calendarData])
+
+  // 잔디 상세 표시 상태: 호버 시 보여주고, 클릭하면 고정 토글
+  const [activeDetail, setActiveDetail] = useState<null | {
+    date: string
+    attendance: boolean
+    videoWatch: boolean
+    fitnessTest: boolean
+    intensity: number
+  }>(null)
+  const [pinnedDate, setPinnedDate] = useState<string | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const todayCellRef = useRef<HTMLDivElement | null>(null)
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    // 기본으로 맨 오른쪽으로 스크롤 고정
+    el.scrollLeft = el.scrollWidth
+    // 오늘 셀을 우측 끝 기준으로 보이게 스크롤
+    if (todayCellRef.current) {
+      todayCellRef.current.scrollIntoView({ behavior: "auto", inline: "end", block: "nearest" })
+    }
+  }, [])
 
   const recommendedRecipes = [
     {
@@ -114,7 +183,7 @@ export default function MyPage() {
           <p className="text-pretty text-lg text-muted-foreground">운동 기록과 성과를 확인하세요</p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {/* Left Column - Profile & Stats */}
           <div className="space-y-6 lg:col-span-1">
             {/* Profile Card */}
@@ -202,21 +271,30 @@ export default function MyPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <div className="inline-flex flex-col gap-1">
-                    <div className="flex gap-1">
-                      {["월", "화", "수", "목", "금", "토", "일"].map((day, i) => (
-                        <div key={i} className="flex w-3 items-center justify-center text-[10px] text-muted-foreground">
-                          {i % 2 === 0 ? day : ""}
-                        </div>
-                      ))}
-                    </div>
+                <div className="overflow-x-auto" ref={scrollContainerRef}>
+                  {/* 상단 월 라벨 제거: 초기 구조로 복원 */}
+                  <div className="relative inline-flex flex-col gap-1">
+                    {/* 요일 라벨 제거 */}
                     <div className="flex gap-1">
                       {calendarData.map((week, weekIndex) => (
                         <div key={weekIndex} className="flex flex-col gap-1">
                           {week.map((day, dayIndex) => (
                             <div
                               key={dayIndex}
+                              className="relative"
+                              ref={(node) => {
+                                // 오늘 날짜 셀 참조 저장
+                                if (node) {
+                                  const todayStr = new Date().toISOString().split("T")[0]
+                                  if (day.date === todayStr) {
+                                    todayCellRef.current = node
+                                  }
+                                }
+                              }}
+                            >
+                              <button
+                              key={dayIndex}
+                              type="button"
                               className={`h-3 w-3 rounded-sm ${
                                 day.intensity === 0
                                   ? "bg-muted"
@@ -225,14 +303,62 @@ export default function MyPage() {
                                     : day.intensity === 2
                                       ? "bg-primary/60"
                                       : "bg-primary"
-                              } transition-all hover:ring-2 hover:ring-primary/50 cursor-pointer`}
-                              title={`${day.date} / 출석 ${day.attendance ? "O" : "X"}, 영상 시청 ${day.videoWatch ? "O" : "X"}, 체력 측정 ${day.fitnessTest ? "O" : "X"}`}
-                            />
+                              } transition-colors cursor-pointer`}
+                              onMouseEnter={(e) => {
+                                // If a date is pinned, ignore hover from other cells
+                                if (pinnedDate && pinnedDate !== day.date) return
+                                setActiveDetail({
+                                  date: day.date,
+                                  attendance: day.attendance,
+                                  videoWatch: day.videoWatch,
+                                  fitnessTest: day.fitnessTest,
+                                  intensity: day.intensity,
+                                })
+                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8 })
+                              }}
+                              onMouseLeave={() => {
+                                // If any date is pinned, do not clear on hover out
+                                if (pinnedDate) return
+                                setActiveDetail(null)
+                                setTooltipPos(null)
+                              }}
+                              onClick={(e) => {
+                                if (pinnedDate === day.date) {
+                                  setPinnedDate(null)
+                                  setActiveDetail(null)
+                                  setTooltipPos(null)
+                                } else {
+                                  setPinnedDate(day.date)
+                                  setActiveDetail({
+                                    date: day.date,
+                                    attendance: day.attendance,
+                                    videoWatch: day.videoWatch,
+                                    fitnessTest: day.fitnessTest,
+                                    intensity: day.intensity,
+                                  })
+                                  // Position based on the clicked button
+                                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                  setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8 })
+                                }
+                              }}
+                              aria-label={`${day.date} 출석 ${day.attendance ? "O" : "X"}, 영상 시청 ${day.videoWatch ? "O" : "X"}, 체력 측정 ${day.fitnessTest ? "O" : "X"}`}
+                              />
+                            </div>
                           ))}
                         </div>
                       ))}
                     </div>
                   </div>
+                  {activeDetail && tooltipPos && createPortal(
+                    <div
+                      className="fixed z-[1000] w-max rounded-md border bg-popover px-2 py-1 text-[11px] text-popover-foreground shadow-sm"
+                      style={{ left: tooltipPos.x, top: tooltipPos.y, transform: "translate(-50%, -100%)" }}
+                    >
+                      {activeDetail.date} · 출석 {activeDetail.attendance ? "O" : "X"} · 영상 {activeDetail.videoWatch ? "O" : "X"} · 측정 {activeDetail.fitnessTest ? "O" : "X"}
+                    </div>,
+                    document.body
+                  )}
                   <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                     <span>적음</span>
                     <div className="h-3 w-3 rounded-sm bg-muted" />
@@ -242,6 +368,7 @@ export default function MyPage() {
                     <span>많음</span>
                   </div>
                 </div>
+                {/* per-cell tooltip handled inline above */}
               </CardContent>
             </Card>
 

@@ -12,6 +12,7 @@ import { LoginModal } from "@/components/login-modal"
 export function SiteHeader() {
   const [user, setUser] = useState<{ name: string; provider: string } | null>(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -44,6 +45,7 @@ export function SiteHeader() {
   }
 
   const handleLogout = () => {
+    setLoggingOut(true)
     const run = async () => {
       try {
         const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
@@ -62,8 +64,10 @@ export function SiteHeader() {
         if (typeof window !== "undefined") {
           sessionStorage.removeItem("user")
           sessionStorage.removeItem("authToken")
+          sessionStorage.setItem("justLoggedOut", "1")
           setUser(null)
-          navigate("/")
+          // brief delay so the overlay is perceptible
+          setTimeout(() => navigate("/"), 400)
         }
       }
     }
@@ -146,7 +150,7 @@ export function SiteHeader() {
                     to="/community"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
-                    커뮤니티
+                    동호회 찾기
                   </Link>
                   <Link
                     to="/facilities"
@@ -176,7 +180,7 @@ export function SiteHeader() {
                     to="/community"
                     className="text-sm font-medium text-gray-700 transition-colors hover:text-[#0074B7]"
                   >
-                    커뮤니티
+                    동호회 찾기
                   </Link>
                   <Link
                     to="/facilities"
@@ -231,6 +235,15 @@ export function SiteHeader() {
         onClose={() => setIsLoginModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
+
+      {loggingOut && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
+          <div className="rounded-xl bg-white px-6 py-5 text-center shadow-xl">
+            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-[#0074B7]" />
+            <div className="text-sm font-medium text-gray-900">로그아웃 중...</div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

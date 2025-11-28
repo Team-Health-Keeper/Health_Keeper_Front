@@ -22,6 +22,30 @@ export default function ClubsPage() {
 
   // Click detail removed
 
+  // 지역 목록 및 동호회 수 (데모용)
+  const REGIONS: { name: string; count: number; clubKeyVariants: string[] }[] = [
+    { name: "강원도", count: 1354, clubKeyVariants: ["강원", "강원도"] },
+    { name: "경기도", count: 4422, clubKeyVariants: ["경기", "경기도"] },
+    { name: "경상남도", count: 1643, clubKeyVariants: ["경남", "경상남도"] },
+    { name: "경상북도", count: 1441, clubKeyVariants: ["경북", "경상북도"] },
+    { name: "광주광역시", count: 1021, clubKeyVariants: ["광주", "광주광역시"] },
+    { name: "대구광역시", count: 1248, clubKeyVariants: ["대구", "대구광역시"] },
+    { name: "대전광역시", count: 891, clubKeyVariants: ["대전", "대전광역시"] },
+    { name: "부산광역시", count: 1290, clubKeyVariants: ["부산", "부산광역시"] },
+    { name: "서울특별시", count: 2875, clubKeyVariants: ["서울", "서울특별시"] },
+    { name: "세종특별자치시", count: 366, clubKeyVariants: ["세종", "세종특별자치시"] },
+    { name: "울산광역시", count: 952, clubKeyVariants: ["울산", "울산광역시"] },
+    { name: "인천광역시", count: 1182, clubKeyVariants: ["인천", "인천광역시"] },
+    { name: "전라남도", count: 1098, clubKeyVariants: ["전남", "전라남도"] },
+    { name: "전라북도", count: 1464, clubKeyVariants: ["전북", "전라북도"] },
+    { name: "제주특별자치도", count: 859, clubKeyVariants: ["제주", "제주특별자치도"] },
+    { name: "충청남도", count: 1260, clubKeyVariants: ["충남", "충청남도"] },
+    { name: "충청북도", count: 1030, clubKeyVariants: ["충북", "충청북도"] },
+  ]
+
+  const [selectedRegion, setSelectedRegion] = useState<string>("모두")
+  const [searchQuery, setSearchQuery] = useState<string>("")
+
   const allClubs = [
     {
       id: 1,
@@ -139,6 +163,23 @@ export default function ClubsPage() {
     return `${year}년 ${month}월 ${day}일`
   }
 
+  // 지역 필터 매칭 함수 (시/도 명칭 변형 허용)
+  const regionMatches = (clubRegion: string, selected: string) => {
+    if (selected === "모두") return true
+    const region = REGIONS.find((r) => r.name === selected)
+    if (!region) return true
+    return region.clubKeyVariants.some((v) => clubRegion.includes(v))
+  }
+
+  const filteredClubs = displayedClubs.filter(
+    (club) =>
+      regionMatches(club.CTPRVN_NM, selectedRegion) &&
+      (searchQuery.trim() === "" ||
+        club.CLUB_NM.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        club.ITEM_NM.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        club.ITEM_CL_NM.toLowerCase().includes(searchQuery.toLowerCase()))
+  )
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -161,19 +202,42 @@ export default function ClubsPage() {
               혼자 운동하기 힘드신가요? 같은 목표를 가진 사람들과 함께 운동하세요
             </p>
 
-            {/* Search Bar */}
-            <div className="mx-auto max-w-2xl">
-              <div className="relative flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    placeholder="동호회 이름, 관심 운동 검색..."
-                    className="h-14 rounded-full border-2 pl-12 pr-4 text-base focus-visible:ring-[#0074B7]"
-                  />
+            {/* Region + Search Bar */}
+            <div className="mx-auto max-w-3xl">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                <div className="flex w-full gap-2">
+                  <div className="relative w-40 sm:w-48 shrink-0">
+                    <select
+                      value={selectedRegion}
+                      onChange={(e) => setSelectedRegion(e.target.value)}
+                      className="h-14 w-full appearance-none rounded-full border-2 border-gray-200 bg-white px-5 pr-10 text-sm font-medium text-gray-700 focus:border-[#0074B7] focus:outline-none focus-visible:ring-[#0074B7]"
+                    >
+                      <option value="모두">모두</option>
+                      {REGIONS.map((r) => (
+                        <option key={r.name} value={r.name}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                  </div>
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="동호회 이름, 관심 운동 검색..."
+                      className="h-14 rounded-full border-2 pl-12 pr-4 text-base focus-visible:ring-[#0074B7]"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => {/* 필터는 실시간 적용되므로 버튼은 향후 확장용 */}}
+                    size="lg"
+                    className="h-14 rounded-full bg-[#0074B7] px-8 hover:bg-[#005a91]"
+                  >
+                    검색
+                  </Button>
                 </div>
-                <Button size="lg" className="h-14 rounded-full bg-[#0074B7] px-8 hover:bg-[#005a91]">
-                  검색
-                </Button>
               </div>
             </div>
 
@@ -230,15 +294,14 @@ export default function ClubsPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {displayedClubs.map((club, index) => (
+            {filteredClubs.map((club, index) => (
               <Card
                 key={`${club.id}-${index}`}
                 className="group overflow-hidden rounded-2xl border-2 transition-all hover:border-[#0074B7] hover:shadow-xl py-0"
               >
-                {/* Small spacer at top for visual breathing room */}
-                <div className="relative h-3" />
+                {/* Header spacing handled via padding; no spacer */}
 
-                <CardHeader className="px-6 pt-0 pb-2">
+                <CardHeader className="px-6 pt-6">
                   <div className="mb-2 flex items-center gap-2">
                     <Badge className="bg-[#0074B7] hover:bg-[#005a91]">{club.ITEM_NM}</Badge>
                     <Badge variant="outline">{club.ITEM_CL_NM}</Badge>
@@ -246,7 +309,7 @@ export default function ClubsPage() {
                   <CardTitle className="text-xl font-bold text-gray-900">{club.CLUB_NM}</CardTitle>
                 </CardHeader>
 
-                <CardContent className="px-6 space-y-3 pb-4">
+                <CardContent className="px-6 space-y-3 pb-6">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <MapPin className="h-4 w-4 text-gray-400" />
                     {club.SIGNGU_NM}
@@ -280,31 +343,19 @@ export default function ClubsPage() {
           </div>
 
           <div ref={observerTarget} className="mt-12 text-center">
+            {filteredClubs.length === 0 && !isLoading && (
+              <p className="text-sm text-gray-600">조건에 맞는 동호회가 없습니다.</p>
+            )}
             {isLoading && (
               <div className="flex items-center justify-center gap-2 text-gray-600">
                 <Loader2 className="h-6 w-6 animate-spin" />
                 <span>동호회를 불러오는 중...</span>
               </div>
             )}
-            {!hasMore && displayedClubs.length > 0 && <p className="text-gray-600">모든 동호회를 불러왔습니다</p>}
+            {!hasMore && displayedClubs.length > 0 && (
+              <p className="text-gray-600">모든 동호회를 불러왔습니다</p>
+            )}
           </div>
-        </div>
-      </section>
-
-      {/* Create Club CTA */}
-      <section className="bg-gradient-to-br from-blue-600 to-blue-700 py-20 text-white">
-        <div className="container mx-auto max-w-4xl px-6 text-center">
-          <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-sm">
-            <Users className="h-10 w-10" />
-          </div>
-          <h2 className="mb-6 text-balance text-4xl font-bold tracking-tight">내 동호회를 만들어보세요</h2>
-          <p className="mb-10 text-pretty text-xl leading-relaxed text-blue-100">
-            같은 목표를 가진 사람들과 함께 운동하고 동기를 얻으세요
-          </p>
-          <Button size="lg" className="bg-white px-8 py-6 text-base text-[#0074B7] hover:bg-gray-100">
-            <Users className="mr-2 h-5 w-5" />
-            동호회 만들기
-          </Button>
         </div>
       </section>
 
@@ -350,8 +401,6 @@ export default function ClubsPage() {
           </div>
         </div>
       </footer>
-
-      {/* Modal removed */}
     </div>
   )
 }

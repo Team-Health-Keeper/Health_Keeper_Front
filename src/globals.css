@@ -228,3 +228,71 @@
     transform: translateY(0);
   }
 }
+
+@layer utilities {
+  @keyframes growY {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+  .animate-grow-down { transform-origin: top; animation: growY 0.5s linear forwards; }
+  .animate-grow-up { transform-origin: bottom; animation: growY 0.5s linear forwards; }
+
+  /* Use a smoother material-like easing for connector growth */
+  .animate-grow-down { animation-timing-function: cubic-bezier(0.4,0,0.2,1); }
+  .animate-grow-up { animation-timing-function: cubic-bezier(0.4,0,0.2,1); }
+
+  /* Stage text overshoot (ease-out-back style) */
+  @keyframes stageIn {
+    0% { transform: scale(0.92); opacity: 0; }
+    40% { opacity: 1; }
+    65% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .animate-stage-in { animation: stageIn 500ms cubic-bezier(0.33,1,0.68,1); }
+
+  @keyframes rotate360 {
+    to { transform: rotate(360deg); }
+  }
+
+  .radar-sweep {
+    pointer-events: none;
+    position: absolute;
+    inset: -6px;
+    border-radius: 9999px;
+    background-color: var(--color-primary);
+    -webkit-mask: conic-gradient(transparent 0 330deg, black 330deg 360deg);
+    mask: conic-gradient(transparent 0 330deg, black 330deg 360deg);
+    opacity: 0.15;
+    animation: rotate360 2.5s linear infinite;
+  }
+
+  @keyframes bgBreathe {
+    0% { opacity: 0; transform: scale(1); }
+    50% { opacity: 0.05; transform: scale(1.05); }
+    100% { opacity: 0; transform: scale(1); }
+  }
+
+  .animate-bg-breathe {
+    pointer-events: none;
+    background: radial-gradient(120% 120% at 50% 50%, var(--color-primary) 0%, transparent 60%);
+    opacity: 0;
+    animation: bgBreathe 8s ease-in-out infinite;
+  }
+
+  @keyframes wipeSlide {
+    0% { transform: translateX(-30%); opacity: 0; }
+    10% { opacity: 0.15; }
+    90% { opacity: 0.15; }
+    100% { transform: translateX(130%); opacity: 0; }
+  }
+
+  .wipe-shine {
+    position: absolute;
+    inset: 0;
+    width: 30%;
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.15), transparent);
+    filter: blur(2px);
+    animation: wipeSlide 1.2s linear infinite;
+    pointer-events: none;
+  }
+}

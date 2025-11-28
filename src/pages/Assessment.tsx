@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Activity, Video } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Activity, Video, BookOpen } from "lucide-react"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Link, useNavigate } from "react-router-dom"
 import { YoutubeModal } from "@/components/youtube-modal"
+import { MeasurementGuideModal, guideKeyForMeasurement, hasGuideForMeasurement } from "@/components/measurement-guide-modal"
 import { SiteHeader } from "@/components/site-header"
 
 const ageGroupMeasurements = {
@@ -113,11 +115,15 @@ const requiredMeasurementIds = [
 ]
 
 export default function AssessmentPage() {
+  // 검증 복구: 필수값 모두 채워져야 분석 시작 가능
+  const TEMP_SKIP_VALIDATION = false
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
+  const navigate = useNavigate()
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
+  const [guideKey, setGuideKey] = useState<string | null>(null)
   const [age, setAge] = useState("")
   const [gender, setGender] = useState("")
   const [height, setHeight] = useState("")
@@ -127,28 +133,82 @@ export default function AssessmentPage() {
 
   const [ageGroup, setAgeGroup] = useState<string>("")
   const [showMeasurements, setShowMeasurements] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [ageWarning, setAgeWarning] = useState<string | null>(null)
 
   const [measurementValues, setMeasurementValues] = useState<Record<string, string>>({})
+
+  // 분석 단계 전환 시 페이드 애니메이션을 위한 상태
+  const [displayedStageIndex, setDisplayedStageIndex] = useState(0)
+  const [isStageFading, setIsStageFading] = useState(false)
+  const [transitionDir, setTransitionDir] = useState<'down' | 'up'>('down')
+  const FADE_MS = 500
+  // 총 분석 시간: 8초 (기존 10초에서 단축)
+  const ANALYZE_MS = 8000
+  // 단계별 가시 시간: (총시간 - 페이드합) / 3 = (8000 - 2000)/3 = 2000ms
+  const VISIBLE_MS = Math.max(0, (ANALYZE_MS - 4 * FADE_MS) / 3)
+  const elapsedMs = (progress / 100) * ANALYZE_MS
+  const t1 = VISIBLE_MS
+  const t2 = 2 * VISIBLE_MS + 2 * FADE_MS
+  const computedStageIndex = elapsedMs < t1 ? 0 : elapsedMs < t2 ? 1 : 2
+  const [ellipsisCount, setEllipsisCount] = useState(0)
+
+  useEffect(() => {
+    if (!analyzing) return
+    if (displayedStageIndex === computedStageIndex) return
+    const dir = computedStageIndex > displayedStageIndex ? 'down' : 'up'
+    setTransitionDir(dir)
+    setIsStageFading(true)
+    const t = setTimeout(() => {
+      setDisplayedStageIndex(computedStageIndex)
+      setIsStageFading(false)
+    }, FADE_MS)
+    return () => clearTimeout(t)
+  }, [computedStageIndex, analyzing])
+
+  // 점점점(ellipsis) 애니메이션: 단계가 바뀌면 0부터 다시 시작
+  useEffect(() => {
+    if (!analyzing) {
+      setEllipsisCount(0)
+      return
+    }
+    setEllipsisCount(0)
+    const iv = setInterval(() => {
+      setEllipsisCount((c) => (c + 1) % 4)
+    }, 350)
+    return () => clearInterval(iv)
+  }, [analyzing, displayedStageIndex])
 
   useEffect(() => {
     if (!age) {
       setAgeGroup("")
+      setAgeWarning(null)
       return
     }
 
     const ageNum = Number.parseInt(age)
-    if (ageNum >= 4 && ageNum <= 6) {
+    if (ageNum >= 1 && ageNum <= 3) {
+      setAgeGroup("")
+      setAgeWarning("만 1–3세는 해당 나이의 데이터가 없어 측정이 불가합니다.")
+    } else if (ageNum >= 4 && ageNum <= 6) {
       setAgeGroup("유아기")
-    } else if (ageNum >= 11 && ageNum <= 12) {
+      setAgeWarning(null)
+    } else if (ageNum >= 7 && ageNum <= 12) {
       setAgeGroup("유소년")
+      setAgeWarning(null)
     } else if (ageNum >= 13 && ageNum <= 18) {
       setAgeGroup("청소년")
+      setAgeWarning(null)
     } else if (ageNum >= 19 && ageNum <= 64) {
       setAgeGroup("성인")
+      setAgeWarning(null)
     } else if (ageNum >= 65) {
       setAgeGroup("어르신")
+      setAgeWarning(null)
     } else {
       setAgeGroup("")
+      setAgeWarning(null)
     }
   }, [age])
 
@@ -174,12 +234,121 @@ export default function AssessmentPage() {
   }, [age, gender, height, weight, waist])
 
   const currentMeasurements = ageGroup ? ageGroupMeasurements[ageGroup as keyof typeof ageGroupMeasurements] : {}
+  const requiredIdsForGroup = Object.keys(currentMeasurements)
+    .filter((id) => !["1", "2", "4", "18"].includes(id))
+    .filter((id) => requiredMeasurementIds.includes(id))
+  const allRequiredFilled = requiredIdsForGroup.every((id) => {
+    const v = measurementValues[id]
+    return typeof v === "string" && v.trim() !== ""
+  })
 
   const updateMeasurementValue = (id: string, value: string) => {
     setMeasurementValues((prev) => ({
       ...prev,
       [id]: value,
     }))
+  }
+
+  const handleAnalyzeStart = () => {
+    if (!TEMP_SKIP_VALIDATION) {
+      if (!showMeasurements || analyzing || ageWarning || !allRequiredFilled) return
+    } else {
+      if (analyzing) return
+    }
+    setProgress(0)
+    setAnalyzing(true)
+  }
+
+  useEffect(() => {
+    if (!analyzing) return
+    const duration = ANALYZE_MS
+    const start = Date.now()
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - start
+      const pct = Math.min(100, Math.round((elapsed / duration) * 100))
+      setProgress(pct)
+      if (pct >= 100) {
+        clearInterval(timer)
+        navigate("/results")
+      }
+    }, 30)
+    return () => clearInterval(timer)
+  }, [analyzing, navigate])
+
+  // 분석 중에는 별도의 전체 화면으로 전환
+  if (analyzing) {
+    const stages = [
+      "AI가 측정 값을 읽고 있어요",
+      "AI가 입력된 값을 바탕으로 운동 처방 레시피를 만들고 있어요",
+      "AI가 맞춤 결과 화면을 준비하고 있어요",
+    ]
+    const showWipe = progress >= 75
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="relative flex h-screen w-screen flex-col items-center justify-center px-6" role="status" aria-live="polite">
+          <div className="absolute inset-0 animate-bg-breathe" aria-hidden="true" />
+          <div className="mb-12 relative h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48">
+            <img src="/logo-icon.png" alt="Health Keeper" className="h-full w-full" />
+            <span className="pointer-events-none absolute inset-0 rounded-full border-8 border-primary/20 border-t-primary/60 animate-spin" />
+          </div>
+          <div className="relative mb-10 w-full max-w-xl h-36 sm:h-40 md:h-44 flex flex-col items-center justify-center gap-4">
+            {showWipe && <span className="wipe-shine" aria-hidden="true" />}
+            {/* Top dots: stage 3 -> 2 dots, stage 2 -> 1 dot, stage 1 -> 0 */}
+            {(() => {
+              const count = displayedStageIndex === 2 ? 2 : displayedStageIndex === 1 ? 1 : 0
+              if (count <= 0) return null
+              return (
+                <div className="flex flex-col items-center gap-1.5" aria-hidden="true">
+                  {Array.from({ length: count }).map((_, i) => (
+                    <span key={i} className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                  ))}
+                </div>
+              )
+            })()}
+            {displayedStageIndex !== 0 && isStageFading && transitionDir === 'up' && (
+              <span className="h-8 sm:h-10 w-px bg-muted-foreground/30 animate-grow-up" aria-hidden="true" />
+            )}
+            <div
+              className={
+                "flex items-center gap-4 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] " +
+                (isStageFading
+                  ? (transitionDir === 'down' ? 'origin-bottom ' : 'origin-top ') + 'opacity-0 scale-0'
+                  : (transitionDir === 'down' ? 'origin-top ' : 'origin-bottom ') + 'opacity-100 scale-100 animate-stage-in')
+              }
+            >
+              <div className={(displayedStageIndex === 1 ? 'text-lg sm:text-2xl md:text-3xl sm:whitespace-nowrap ' : 'text-xl sm:text-2xl md:text-3xl ') + 'font-bold text-foreground'}>
+                {stages[displayedStageIndex]}
+                <span aria-hidden="true" className="inline-block w-[3ch]">
+                  {'.'.repeat(ellipsisCount)}
+                </span>
+              </div>
+            </div>
+            {displayedStageIndex !== 2 && isStageFading && transitionDir === 'down' && (
+              <span className="h-8 sm:h-10 w-px bg-muted-foreground/30 animate-grow-down" aria-hidden="true" />
+            )}
+            {/* Bottom dots: stage 1 -> 2 dots, stage 2 -> 1 dot, stage 3 -> 0 */}
+            {(() => {
+              const count = displayedStageIndex === 0 ? 2 : displayedStageIndex === 1 ? 1 : 0
+              if (count <= 0) return null
+              return (
+                <div className="flex flex-col items-center gap-1.5" aria-hidden="true">
+                  {Array.from({ length: count }).map((_, i) => (
+                    <span key={i} className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                  ))}
+                </div>
+              )
+            })()}
+          </div>
+          <div className="mb-4 text-4xl font-extrabold text-foreground tabular-nums">{progress}%</div>
+          <div className="h-3 w-full max-w-xl rounded bg-muted overflow-hidden">
+            <div
+              className="h-full bg-primary transition-[width] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -254,25 +423,41 @@ export default function AssessmentPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="waist">허리둘레 (cm) *</Label>
-                  <Input
+                  <div className="flex items-center gap-2">
+                    <Input
                     id="waist"
                     type="number"
                     step="0.1"
                     placeholder="예: 80.0"
                     value={waist}
                     onChange={(e) => setWaist(e.target.value)}
-                  />
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 bg-transparent"
+                      onClick={() => setGuideKey('waist')}
+                      title="허리둘레 측정 가이드"
+                    >
+                      <BookOpen className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bmi">BMI (kg/㎡)</Label>
                   <Input id="bmi" type="text" value={bmi} readOnly placeholder="신장/체중으로 자동 계산" />
                 </div>
               </div>
+              {ageWarning && (
+                <div className="rounded-md bg-destructive/10 p-4">
+                  <p className="text-sm font-medium text-destructive">{ageWarning}</p>
+                </div>
+              )}
+
               {ageGroup && (
                 <div className="rounded-md bg-primary/10 p-4">
-                  <p className="text-sm font-medium text-primary">
-                    연령대: {ageGroup} (만 {age}세)
-                  </p>
+                  <p className="text-sm font-medium text-primary">연령대: {ageGroup} (만 {age}세)</p>
                 </div>
               )}
             </CardContent>
@@ -287,6 +472,11 @@ export default function AssessmentPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {!allRequiredFilled && (
+                  <div className="rounded-md bg-amber-100 px-4 py-2 text-sm text-amber-900">
+                    필수 측정값을 모두 입력하면 분석을 시작할 수 있어요.
+                  </div>
+                )}
                 <div className="grid gap-4 md:grid-cols-2">
                   {Object.entries(currentMeasurements)
                     // Exclude basic info fields from measurement inputs: height(1), weight(2), waist(4), BMI(18)
@@ -300,15 +490,30 @@ export default function AssessmentPage() {
                           <Label htmlFor={`measurement-${id}`}>
                               {label} {isRequired && <span className="text-destructive">*필수</span>}
                           </Label>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 bg-transparent"
-                            onClick={() => setSelectedVideo("dQw4w9WgXcQ")}
-                          >
-                            <Video className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            {hasGuideForMeasurement(id) && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 bg-transparent"
+                                onClick={() => setGuideKey(guideKeyForMeasurement(id))}
+                                title="측정 글 가이드"
+                              >
+                                <BookOpen className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-transparent"
+                              onClick={() => setSelectedVideo("dQw4w9WgXcQ")}
+                              title="측정 영상 보기"
+                            >
+                              <Video className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                         <Input
                           id={`measurement-${id}`}
@@ -338,11 +543,13 @@ export default function AssessmentPage() {
             <Button variant="outline" asChild>
               <Link to="/">취소</Link>
             </Button>
-            <Button size="lg" asChild disabled={!showMeasurements}>
-              <Link to="/results">
-                <Activity className="mr-2 h-5 w-5" />
-                AI 분석 시작
-              </Link>
+            <Button
+              size="lg"
+              onClick={handleAnalyzeStart}
+              disabled={TEMP_SKIP_VALIDATION ? analyzing : (!showMeasurements || analyzing || !!ageWarning || !allRequiredFilled)}
+            >
+              <Activity className="mr-2 h-5 w-5" />
+              {analyzing ? "분석 중..." : "AI 분석 시작"}
             </Button>
           </div>
         </div>
@@ -351,6 +558,12 @@ export default function AssessmentPage() {
       {selectedVideo && (
         <YoutubeModal videoId={selectedVideo} isOpen={!!selectedVideo} onClose={() => setSelectedVideo(null)} />
       )}
+
+      {guideKey && (
+        <MeasurementGuideModal isOpen={!!guideKey} onClose={() => setGuideKey(null)} guideKey={guideKey} />
+      )}
+
+      {/* 분석 중 화면은 별도 뷰로 전환되므로 Dialog 제거 */}
     </div>
   )
 }

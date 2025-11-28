@@ -178,7 +178,7 @@ export default function MyRecipesPage() {
           </p>
         </div>
 
-        <div className="mb-8 flex gap-2 rounded-lg border border-border bg-card p-1">
+        <div className="mb-8 flex flex-col sm:flex-row gap-2 rounded-lg border border-border bg-card p-1">
           <button
             onClick={() => setActiveTab("daily")}
             className={`flex-1 rounded-md px-6 py-3 text-sm font-medium transition-all ${

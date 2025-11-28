@@ -707,6 +707,7 @@ export default function RecipeDetailPage() {
         <img
           src={`https://img.youtube.com/vi/${exercise.videoId}/mqdefault.jpg`}
           alt={exercise.name}
+          loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
@@ -772,7 +773,7 @@ export default function RecipeDetailPage() {
         {/* Recipe Header */}
         <div className="mb-10">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">{recipe.category}</Badge>
-          <h1 className="mb-4 text-balance text-4xl font-bold tracking-tight text-foreground">{recipe.title}</h1>
+          <h1 className="mb-4 text-balance text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{recipe.title}</h1>
           <p className="text-lg text-muted-foreground mb-6">{recipe.description}</p>
 
           <div className="flex flex-wrap gap-6 text-sm">

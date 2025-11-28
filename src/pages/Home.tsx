@@ -24,6 +24,7 @@ export default function Home() {
   const navigate = useNavigate()
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [user, setUser] = useState<{ name: string } | null>(null)
+  const [showLogoutNotice, setShowLogoutNotice] = useState(false)
 
   useEffect(() => {
     const token = sessionStorage.getItem("authToken")
@@ -32,6 +33,14 @@ export default function Home() {
       setUser(JSON.parse(storedUser))
     } else if (storedUser) {
       setUser(JSON.parse(storedUser))
+    }
+    // show one-time logout notice
+    const justLoggedOut = sessionStorage.getItem("justLoggedOut")
+    if (justLoggedOut) {
+      sessionStorage.removeItem("justLoggedOut")
+      setShowLogoutNotice(true)
+      const t = setTimeout(() => setShowLogoutNotice(false), 2500)
+      return () => clearTimeout(t)
     }
   }, [])
 
@@ -86,6 +95,15 @@ export default function Home() {
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
 
+      {/* One-time logout notice */}
+      {showLogoutNotice && (
+        <div className="pointer-events-none fixed left-1/2 top-24 z-50 -translate-x-1/2">
+          <div className="pointer-events-auto rounded-full bg-gray-900/90 px-4 py-2 text-sm text-white shadow-lg">
+            성공적으로 로그아웃되었습니다.
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1">
         <div className="min-h-screen bg-white">
@@ -100,7 +118,7 @@ export default function Home() {
                     AI 기반 맞춤형 체력 관리
                   </div>
 
-                  <h1 className="text-balance text-5xl font-bold leading-tight tracking-tight text-gray-900 lg:text-6xl">
+                  <h1 className="text-balance text-4xl sm:text-5xl font-bold leading-tight tracking-tight text-gray-900 lg:text-6xl">
                     당신의 체력을
                     <br />
                     <span className="text-[#0074B7]">AI가 분석하고</span>
@@ -162,11 +180,12 @@ export default function Home() {
                     <img
                       src="/3d-illustration-of-person-exercising-with-fitness-.jpg"
                       alt="체력 측정 일러스트"
+                      loading="lazy"
                       className="h-auto w-full"
                     />
                   </div>
                   {/* Floating Cards */}
-                  <div className="absolute -left-4 top-1/4 rounded-2xl bg-white p-4 shadow-xl">
+                  <div className="absolute -left-4 top-1/4 rounded-2xl bg-white p-4 shadow-xl hidden sm:block">
                     <div className="flex items-center gap-3">
                       <div className="rounded-full bg-blue-100 p-3">
                         <TrendingUp className="h-6 w-6 text-[#0074B7]" />
@@ -177,7 +196,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  <div className="absolute -right-4 bottom-1/4 rounded-2xl bg-white p-4 shadow-xl">
+                  <div className="absolute -right-4 bottom-1/4 rounded-2xl bg-white p-4 shadow-xl hidden sm:block">
                     <div className="flex items-center gap-3">
                       <div className="rounded-full bg-green-100 p-3">
                         <Award className="h-6 w-6 text-green-600" />
@@ -213,7 +232,7 @@ export default function Home() {
                   {
                     step: "01",
                     title: "간편 로그인",
-                    description: "카카오 계정으로 빠르게 시작하세요",
+                    description: "카카오/네이버/구글 계정으로 빠르게 시작하세요",
                     icon: Users,
                   },
                   {
@@ -342,6 +361,7 @@ export default function Home() {
                     <img
                       src="/exercise-.jpg"
                       alt="AI 기반 운동 추천 시스템"
+                      loading="lazy"
                       className="h-auto w-full rounded-2xl shadow-lg"
                     />
                   </div>
