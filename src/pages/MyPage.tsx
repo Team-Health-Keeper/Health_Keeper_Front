@@ -77,6 +77,16 @@ export default function MyPage() {
   // 1년치 잔디 데이터는 렌더마다 바뀌지 않도록 메모이즈
   const calendarData = useMemo(() => generateCalendarData(), [])
 
+  // 주간 통계: 이번 주(오늘 포함된 주)의 출석/영상/측정 집계
+  const weeklyStats = useMemo(() => {
+    // 오늘이 포함된 마지막 주를 기준으로 계산
+    const lastWeek = calendarData[calendarData.length - 1] || []
+    const attendanceDays = lastWeek.filter((d) => d.attendance).length
+    const videoWatchCount = lastWeek.filter((d) => d.videoWatch).length
+    const fitnessTests = lastWeek.filter((d) => d.fitnessTest).length
+    return { attendanceDays, videoWatchCount, fitnessTests }
+  }, [calendarData])
+
   // 상단 월 라벨: 각 주의 시작 날짜 기준 월 표시(깃허브 잔디 유사)
   const monthLabels = useMemo(() => {
     const labels: { index: number; text: string }[] = []
@@ -173,7 +183,7 @@ export default function MyPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="container mx-auto max-w-7xl px-4 py-12">
+      <div className="container mx-auto max-w-6xl px-4 py-12">
         {/* Page Header */}
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-primary/10 text-primary">마이페이지</Badge>
@@ -248,16 +258,42 @@ export default function MyPage() {
 
             {/* Stats Overview */}
             <div className="space-y-4">
-              <Card className="border-border">
-                <CardContent className="p-6">
+              {/* 출석 */}
+              <Card className="border-border transition-all duration-200 hover:border-primary/40 hover:shadow-sm hover:bg-muted/30">
+                <CardContent>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">이번 주 출석 일수</span>
+                    <Award className="h-4 w-4 text-primary" />
+                  </div>
+                  <p className="text-3xl font-bold text-foreground">{weeklyStats.attendanceDays}일</p>
+                  <p className="mt-1 text-xs text-muted-foreground">권장: 주 5일 이상</p>
+                </CardContent>
+              </Card>
+
+              {/* 운동 영상 시청 */}
+                <Card className="border-border transition-all duration-200 hover:border-primary/40 hover:shadow-sm hover:bg-muted/30">
+                <CardContent>
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">이번 주 운동 영상 시청</span>
                     <Activity className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="text-3xl font-bold text-foreground">12회</p>
-                  <p className="mt-1 text-xs text-muted-foreground">목표: 주 10회 이상</p>
+                  <p className="text-3xl font-bold text-foreground">{weeklyStats.videoWatchCount}회</p>
+                  <p className="mt-1 text-xs text-muted-foreground">권장: 주 5회 이상</p>
                 </CardContent>
               </Card>
+
+              {/* 체력 측정 */}
+                <Card className="border-border transition-all duration-200 hover:border-primary/40 hover:shadow-sm hover:bg-muted/30">
+                <CardContent>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">이번 주 체력 측정</span>
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </div>
+                  <p className="text-3xl font-bold text-foreground">{weeklyStats.fitnessTests}회</p>
+                  <p className="mt-1 text-xs text-muted-foreground">권장: 주 1회 이상</p>
+                </CardContent>
+              </Card>
+
             </div>
           </div>
 
@@ -359,28 +395,29 @@ export default function MyPage() {
                     </div>,
                     document.body
                   )}
-                  <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>적음</span>
-                    <div className="h-3 w-3 rounded-sm bg-muted" />
-                    <div className="h-3 w-3 rounded-sm bg-primary/30" />
-                    <div className="h-3 w-3 rounded-sm bg-primary/60" />
-                    <div className="h-3 w-3 rounded-sm bg-primary" />
-                    <span>많음</span>
-                  </div>
+                </div>
+                {/* 강도 범례: 가로 스크롤 영역 밖으로 분리하여 항상 고정 표시 */}
+                <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>0 개</span>
+                  <div className="h-3 w-3 rounded-sm bg-muted" />
+                  <div className="h-3 w-3 rounded-sm bg-primary/30" />
+                  <div className="h-3 w-3 rounded-sm bg-primary/60" />
+                  <div className="h-3 w-3 rounded-sm bg-primary" />
+                  <span>3 개</span>
                 </div>
                 {/* per-cell tooltip handled inline above */}
               </CardContent>
             </Card>
 
-            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 gap-0 pb-0">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary">
+                <CardTitle className="flex items-center text-primary">
                   <Award className="h-6 w-6" />
                   추천 운동 레시피
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">체력 분석 결과를 바탕으로 당신에게 필요한 운동입니다</p>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 <div className="grid gap-6 sm:grid-cols-2">
                   {recommendedRecipes.map((recipe) => (
                     <Link key={recipe.id} to={`/recipes/${recipe.slug}`}>

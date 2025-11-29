@@ -82,8 +82,13 @@ export function SiteHeader() {
 
   const handleHomeClick = (e: React.MouseEvent) => {
     if (location.pathname === "/") {
+      // Already on home: prevent navigation and smooth scroll to top
       e.preventDefault()
       window.scrollTo({ top: 0, behavior: "smooth" })
+    } else {
+      // From another route: pre-scroll current page so after navigation home is at top instantly
+      window.scrollTo({ top: 0 })
+      // allow navigation to proceed
     }
   }
 
@@ -93,7 +98,7 @@ export function SiteHeader() {
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
         <div className="container mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" onClick={handleHomeClick} className="flex items-center gap-3">
             <img src="/logo-icon.png" alt="국민체력지키미" className="h-12 w-12" />
             <span className="text-xl font-bold text-gray-900">국민체력지키미</span>
           </Link>

@@ -8,6 +8,7 @@ import { Link, useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { YouTubeModal } from "@/components/youtube-modal"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 // Mock data - 실제로는 API에서 가져올 데이터
 const recipesData: Record<string, any> = {
@@ -769,7 +770,7 @@ export default function RecipeDetailPage() {
       {/* Header */}
       <SiteHeader />
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mx-auto max-w-6xl px-4 py-12">
         {/* Recipe Header */}
         <div className="mb-10">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">{recipe.category}</Badge>
@@ -866,6 +867,7 @@ export default function RecipeDetailPage() {
           onNavigate={openVideoAtIndex}
         />
       )}
+      <SiteFooter />
     </div>
   )
 }

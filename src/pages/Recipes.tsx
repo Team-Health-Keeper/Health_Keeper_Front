@@ -8,6 +8,7 @@ import { Activity, Clock, Search, TrendingUp } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 export default function RecipesPage() {
   useEffect(() => {
@@ -125,7 +126,7 @@ export default function RecipesPage() {
       {/* Header */}
       <SiteHeader />
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mx-auto max-w-6xl px-4 py-12">
         {/* Page Header */}
         <div className="mb-10 text-center">
           <Badge className="mb-4 bg-accent/10 text-accent">운동 레시피</Badge>
@@ -222,6 +223,7 @@ export default function RecipesPage() {
           </CardContent>
         </Card>
       </div>
+      <SiteFooter />
     </div>
   )
 }

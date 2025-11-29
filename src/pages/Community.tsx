@@ -8,6 +8,7 @@ import { Users, MapPin, Calendar, Search, Filter, Heart, TrendingUp, Star, User2
 import { Link } from "react-router-dom"
 import { useState, useEffect, useRef } from "react"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 export default function ClubsPage() {
   useEffect(() => {
@@ -359,48 +360,7 @@ export default function ClubsPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t bg-gray-50 py-12">
-        <div className="container mx-auto max-w-6xl px-6">
-          <div className="grid gap-8 md:grid-cols-2">
-            <div>
-              <div className="mb-4 flex items-center gap-2">
-                <img src="/logo-icon.png" alt="국민체력지키미" className="h-8 w-8" />
-                <span className="text-lg font-bold text-gray-900">국민체력지키미</span>
-              </div>
-              <p className="text-sm leading-relaxed text-gray-600">AI 기반 맞춤형 체력 관리 플랫폼</p>
-            </div>
-            <div>
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">서비스</h3>
-              <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600">
-                <li>
-                  <Link to="/assessment" className="hover:text-[#0074B7]">
-                    체력 측정
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/recipes" className="hover:text-[#0074B7]">
-                    운동 레시피
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/facilities" className="hover:text-[#0074B7]">
-                    시설 찾기
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/community" className="hover:text-[#0074B7]">
-                    동호회
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 border-t border-gray-200 pt-8 text-center text-sm text-gray-600">
-            <p>&copy; 2025 국민체력지키미. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

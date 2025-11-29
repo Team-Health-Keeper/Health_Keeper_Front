@@ -18,6 +18,7 @@ import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { LoginModal } from "@/components/login-modal"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 import { useNavigate } from "react-router-dom"
 
 export default function Home() {
@@ -472,14 +473,8 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Footer */}
-          <footer className="border-t bg-gray-50 py-8">
-            <div className="container mx-auto max-w-6xl px-6">
-              <div className="text-center text-sm text-gray-600">
-                <p>&copy; 2025 국민체력지키미. All rights reserved.</p>
-              </div>
-            </div>
-          </footer>
+          {/* Unified Footer */}
+          <SiteFooter />
 
           {loginModalOpen && (
             <LoginModal

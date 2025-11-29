@@ -166,7 +166,7 @@ export default function ResultsPage() {
       {/* Header */}
       <SiteHeader />
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="mx-auto max-w-4xl">
           {/* Results Header */}
           <div className="mb-8 text-center">

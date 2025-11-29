@@ -356,7 +356,7 @@ export default function AssessmentPage() {
       {/* Header */}
       <SiteHeader />
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="mx-auto max-w-3xl">
           {/* Page Header */}
           <div className="mb-8 text-center">
