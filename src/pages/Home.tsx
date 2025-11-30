@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Sparkles,
   ArrowRight,
+  ArrowUp,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
@@ -26,6 +27,7 @@ export default function Home() {
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [user, setUser] = useState<{ name: string } | null>(null)
   const [showLogoutNotice, setShowLogoutNotice] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
 
   useEffect(() => {
     const token = sessionStorage.getItem("authToken")
@@ -43,6 +45,17 @@ export default function Home() {
       const t = setTimeout(() => setShowLogoutNotice(false), 2500)
       return () => clearTimeout(t)
     }
+  }, [])
+
+  // Show back-to-top button after scrolling down a bit
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop
+      setShowBackToTop(y > 400)
+    }
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
   useEffect(() => {
@@ -109,7 +122,7 @@ export default function Home() {
       <main className="flex-1">
         <div className="min-h-screen bg-white">
           {/* Hero Section - AI Tutor Santa Style */}
-          <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white py-20 lg:py-32">
+          <section className="fade-in-section relative overflow-hidden bg-gradient-to-b from-blue-50 to-white py-20 lg:py-32">
             <div className="container mx-auto max-w-6xl px-6">
               <div className="grid items-center gap-12 lg:grid-cols-2">
                 {/* Left Content */}
@@ -176,8 +189,8 @@ export default function Home() {
                 </div>
 
                 {/* Right Illustration */}
-                <div className="relative">
-                  <div className="relative rounded-3xl bg-gradient-to-br from-blue-100 to-blue-50 p-8">
+                <div className="relative fade-in-section">
+                  <div className="relative rounded-3xl bg-gradient-to-br from-blue-100 to-blue-50 p-8 transition-transform duration-700 ease-out">
                     <img
                       src="/3d-illustration-of-person-exercising-with-fitness-.jpg"
                       alt="체력 측정 일러스트"
@@ -186,7 +199,16 @@ export default function Home() {
                     />
                   </div>
                   {/* Floating Cards */}
-                  <div className="absolute -left-4 top-1/4 rounded-2xl bg-white p-4 shadow-xl hidden sm:block">
+                  <div
+                    className="absolute -left-4 top-1/4 rounded-2xl bg-white p-4 shadow-xl hidden sm:block cursor-pointer transition-transform hover:scale-[1.03]"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="체력 등급 AI 분석 바로가기"
+                    onClick={handleGetStarted}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") handleGetStarted()
+                    }}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="rounded-full bg-blue-100 p-3">
                         <TrendingUp className="h-6 w-6 text-[#0074B7]" />
@@ -197,14 +219,23 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  <div className="absolute -right-4 bottom-1/4 rounded-2xl bg-white p-4 shadow-xl hidden sm:block">
+                  <div
+                    className="absolute -right-4 bottom-1/4 rounded-2xl bg-white p-4 shadow-xl hidden sm:block cursor-pointer transition-transform hover:scale-[1.03]"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="운동 레시피 보러가기"
+                    onClick={() => navigate("/recipes")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") navigate("/recipes")
+                    }}
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-green-100 p-3">
-                        <Award className="h-6 w-6 text-green-600" />
+                      <div className="rounded-full bg-blue-100 p-3">
+                        <Sparkles className="h-6 w-6 text-[#0074B7]" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">운동 완료</p>
-                        <p className="text-xs text-gray-600">+15 포인트</p>
+                        <p className="text-sm font-semibold text-gray-900">운동 레시피</p>
+                        <p className="text-xs text-gray-600">맞춤 추천</p>
                       </div>
                     </div>
                   </div>
@@ -475,6 +506,18 @@ export default function Home() {
 
           {/* Unified Footer */}
           <SiteFooter />
+
+          {/* Back to Top Button */}
+          {showBackToTop && (
+            <button
+              type="button"
+              aria-label="맨 위로 이동"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="fixed bottom-6 right-6 z-50 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#0074B7] text-white shadow-lg transition hover:bg-[#005a91] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0074B7] cursor-pointer"
+           >
+              <ArrowUp className="h-5 w-5" />
+            </button>
+          )}
 
           {loginModalOpen && (
             <LoginModal

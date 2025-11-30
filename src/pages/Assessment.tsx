@@ -12,6 +12,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { YoutubeModal } from "@/components/youtube-modal"
 import { MeasurementGuideModal, guideKeyForMeasurement, hasGuideForMeasurement } from "@/components/measurement-guide-modal"
 import { SiteHeader } from "@/components/site-header"
+import { HeroSection } from "@/components/common/HeroSection"
 
 const ageGroupMeasurements = {
   유아기: {
@@ -356,18 +357,18 @@ export default function AssessmentPage() {
       {/* Header */}
       <SiteHeader />
 
+      <HeroSection
+        badgeIcon={Activity}
+        badgeText="체력 측정"
+        title="체력 측정"
+        highlight="항목 입력"
+        description="아래 항목들을 입력하면 AI가 체력 등급을 분석합니다"
+        centered
+        className="py-12"
+      />
+
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="mx-auto max-w-3xl">
-          {/* Page Header */}
-          <div className="mb-8 text-center">
-            <Badge className="mb-4 bg-primary/10 text-primary">체력 측정</Badge>
-            <h1 className="mb-4 text-balance text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-              체력 측정 항목 입력
-            </h1>
-            <p className="text-pretty text-lg text-muted-foreground">
-              아래 항목들을 입력하면 AI가 체력 등급을 분석합니다
-            </p>
-          </div>
 
           <Card>
             <CardHeader>

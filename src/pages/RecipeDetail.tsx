@@ -9,6 +9,7 @@ import { useState, useEffect } from "react"
 import { YouTubeModal } from "@/components/youtube-modal"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { HeroSection } from "@/components/common/HeroSection"
 
 // Mock data - 실제로는 API에서 가져올 데이터
 const recipesData: Record<string, any> = {
@@ -770,31 +771,34 @@ export default function RecipeDetailPage() {
       {/* Header */}
       <SiteHeader />
 
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        {/* Recipe Header */}
-        <div className="mb-10">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">{recipe.category}</Badge>
-          <h1 className="mb-4 text-balance text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{recipe.title}</h1>
-          <p className="text-lg text-muted-foreground mb-6">{recipe.description}</p>
+      <HeroSection
+        badgeIcon={Activity}
+        badgeText={recipe.category}
+        title="운동 레시피"
+        highlight={recipe.title}
+        description={recipe.description}
+        centered
+        className="py-12"
+      />
 
-          <div className="flex flex-wrap gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              <span className="font-medium text-foreground">총 소요시간</span>
-              <span className="text-muted-foreground">{recipe.duration}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <span className="font-medium text-foreground">난이도</span>
-              <span className="text-muted-foreground">{recipe.level}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              <span className="font-medium text-foreground">운동 개수</span>
-              <span className="text-muted-foreground">
-                {recipe.warmup.length + recipe.main.length + recipe.cooldown.length}개
-              </span>
-            </div>
+      <div className="mx-auto max-w-6xl px-4 py-12">
+        <div className="mb-6 flex flex-wrap gap-6 text-sm justify-center">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary" />
+            <span className="font-medium text-foreground">총 소요시간</span>
+            <span className="text-muted-foreground">{recipe.duration}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <span className="font-medium text-foreground">난이도</span>
+            <span className="text-muted-foreground">{recipe.level}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
+            <span className="font-medium text-foreground">운동 개수</span>
+            <span className="text-muted-foreground">
+              {recipe.warmup.length + recipe.main.length + recipe.cooldown.length}개
+            </span>
           </div>
         </div>
 

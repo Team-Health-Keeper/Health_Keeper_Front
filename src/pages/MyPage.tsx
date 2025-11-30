@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, Award, BookOpen, TrendingUp, Trophy, Clock, Dumbbell } from "lucide-react"
 import { Link } from "react-router-dom"
 import { SiteHeader } from "@/components/site-header"
+import { HeroSection } from "@/components/common/HeroSection"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
@@ -183,15 +184,17 @@ export default function MyPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
+      <HeroSection
+        badgeIcon={Activity}
+        badgeText="마이페이지"
+        title="나의"
+        highlight="체력 관리"
+        description="운동 기록과 성과를 확인하세요"
+        centered
+        className="py-12"
+      />
+
       <div className="container mx-auto max-w-6xl px-4 py-12">
-        {/* Page Header */}
-        <div className="mb-8 text-center">
-          <Badge className="mb-4 bg-primary/10 text-primary">마이페이지</Badge>
-          <h1 className="mb-4 text-balance text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-            나의 체력 관리
-          </h1>
-          <p className="text-pretty text-lg text-muted-foreground">운동 기록과 성과를 확인하세요</p>
-        </div>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {/* Left Column - Profile & Stats */}

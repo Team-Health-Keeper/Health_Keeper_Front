@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, ArrowRight, Award, BookOpen, TrendingUp, Play, Clock } from "lucide-react"
 import { Link } from "react-router-dom"
 import { YouTubeModal } from "@/components/youtube-modal"
+import { HeroSection } from "@/components/common/HeroSection"
 
 const recipesData: Record<string, any> = {
   "flexibility-basic": {
@@ -166,21 +167,18 @@ export default function ResultsPage() {
       {/* Header */}
       <SiteHeader />
 
+      <HeroSection
+        badgeIcon={Award}
+        badgeText="분석 완료"
+        title="체력 등급"
+        highlight="분석 결과"
+        description="AI가 당신의 체력을 분석했습니다"
+        centered
+        className="py-12"
+      />
+
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="mx-auto max-w-4xl">
-          {/* Results Header */}
-          <div className="mb-8 text-center">
-            <div className="mb-4 flex justify-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
-                <Award className="h-10 w-10 text-primary" />
-              </div>
-            </div>
-            <Badge className="mb-4 bg-primary text-primary-foreground">분석 완료</Badge>
-            <h1 className="mb-4 text-balance text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-              체력 등급 분석 결과
-            </h1>
-            <p className="text-pretty text-lg text-muted-foreground">AI가 당신의 체력을 분석했습니다</p>
-          </div>
 
           {/* Grade Result */}
           <Card className="mb-8 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/10">

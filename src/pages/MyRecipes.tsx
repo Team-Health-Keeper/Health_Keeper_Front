@@ -7,6 +7,7 @@ import { Activity, ArrowLeft, BookOpen, Calendar, Clock, TrendingUp } from "luci
 import { Link } from "react-router-dom"
 import { useState } from "react"
 import { SiteFooter } from "@/components/site-footer"
+import { HeroSection } from "@/components/common/HeroSection"
 
 export default function MyRecipesPage() {
   const [activeTab, setActiveTab] = useState<"daily" | "weekly" | "monthly">("weekly")
@@ -168,16 +169,17 @@ export default function MyRecipesPage() {
         </div>
       </header>
 
+      <HeroSection
+        badgeIcon={Activity}
+        badgeText="추천 운동 레시피"
+        title="맞춤"
+        highlight="운동 프로그램"
+        description="체력 분석 결과를 바탕으로 추천된 운동 레시피를 확인하세요"
+        centered
+        className="py-12"
+      />
+
       <div className="container mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-8">
-          <Badge className="mb-4 bg-primary/10 text-primary">추천 운동 레시피</Badge>
-          <h1 className="mb-4 text-balance text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-            맞춤 운동 프로그램
-          </h1>
-          <p className="text-pretty text-lg text-muted-foreground">
-            체력 분석 결과를 바탕으로 추천된 운동 레시피를 확인하세요
-          </p>
-        </div>
 
         <div className="mb-8 flex flex-col sm:flex-row gap-2 rounded-lg border border-border bg-card p-1">
           <button
