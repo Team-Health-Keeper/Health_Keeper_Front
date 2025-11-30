@@ -8,6 +8,8 @@ import { Activity, Clock, Search, TrendingUp } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
+import { HeroSection } from "@/components/common/HeroSection"
 
 export default function RecipesPage() {
   useEffect(() => {
@@ -125,17 +127,17 @@ export default function RecipesPage() {
       {/* Header */}
       <SiteHeader />
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        {/* Page Header */}
-        <div className="mb-10 text-center">
-          <Badge className="mb-4 bg-accent/10 text-accent">운동 레시피</Badge>
-          <h1 className="mb-4 text-balance text-4xl font-bold tracking-tight text-foreground lg:text-5xl">
-            맞춤형 운동 레시피
-          </h1>
-          <p className="text-pretty text-lg text-muted-foreground mx-auto max-w-2xl">
-            체력 부위별, 목적별로 분류된 다양한 운동 프로그램을 만나보세요
-          </p>
-        </div>
+      <HeroSection
+        badgeIcon={Activity}
+        badgeText="운동 레시피"
+        title="맞춤형"
+        highlight="운동 레시피"
+        description="체력 부위별, 목적별로 분류된 다양한 운동 프로그램을 만나보세요"
+        centered
+        className="py-12"
+      />
+
+      <div className="mx-auto max-w-6xl px-4 py-12">
 
         {/* Search and Filter */}
         <div className="mb-10 space-y-6">
@@ -222,6 +224,7 @@ export default function RecipesPage() {
           </CardContent>
         </Card>
       </div>
+      <SiteFooter />
     </div>
   )
 }

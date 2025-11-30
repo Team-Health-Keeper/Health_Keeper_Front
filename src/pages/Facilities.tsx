@@ -4,27 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import {
-  MapPin,
-  Search,
-  Navigation,
-  Phone,
-  Clock,
-  Star,
-  Dumbbell,
-  Waves,
-  Mountain,
-  Users,
-  ExternalLink,
-  Activity,
-  Flag,
-  CircleDot,
-  Footprints,
-  Trophy,
-  Building2,
-  Trees,
-} from "lucide-react"
-import { Link } from "react-router-dom"
+import { MapPin, Navigation, Phone, Clock } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 
 declare global {
@@ -33,48 +13,76 @@ declare global {
   }
 }
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
+import { SearchBar } from "@/components/common/SearchBar"
+import { CategoryFilter } from "@/components/common/CategoryFilter"
+import { EmptyState } from "@/components/common/EmptyState"
+import { LoadingState } from "@/components/common/LoadingState"
+import { HeroSection } from "@/components/common/HeroSection"
 
-// 주요 카테고리(빈도 높은 종목)와 기타 처리용 목록
+// 인기 카테고리 (응답 빈도 기반)
 const MAJOR_FACILITY_TYPES = [
-  "간이운동장",
   "체력단련장",
-  "골프",
   "당구장",
   "태권도",
-  "축구장",
+  "골프",
+  "스크린",
   "실내",
   "실외",
+  "축구",
+  "축구장",
+  "합기도",
+  "테니스장",
+  "생활체육관",
 ]
 
-const MINOR_FACILITY_TYPES = ["수영장", "종합체육시설", "생활체육관", "헬스장", "테니스장", "요가"]
+interface FacilityApiItem {
+  id: number
+  facilityName: string
+  facilityType: string
+  stateValue: string | null
+  zipCode: string | null
+  addressMain: string | null
+  addressDetail: string | null
+  telNo: string | null
+  sidoName: string | null
+  sigunguName: string | null
+  latitude: number | null
+  longitude: number | null
+  distance?: number | null
+  createdAt?: string
+  updatedAt?: string
+}
 
-const generateMockFacilities = (startIndex: number, count: number) => {
-  // 혼합: 주요 + 일부 기타
-  const types = [...MAJOR_FACILITY_TYPES, ...MINOR_FACILITY_TYPES]
-  const areas = ["강남", "역삼", "선릉", "대치", "삼성", "논현", "신사", "압구정", "청담", "도곡"]
+interface NearbyRawItem {
+  id?: number
+  FCLTY_NM?: string | null
+  FCLTY_TY_NM?: string | null
+  FCLTY_STATE_VALUE?: string | null
+  ROAD_NM_ZIP_NO?: string | null
+  RDNMADR_ONE_NM?: string | null
+  RDNMADR_TWO_NM?: string | null
+  FCLTY_TEL_NO?: string | null
+  POSESN_MBY_CTPRVN_NM?: string | null
+  POSESN_MBY_SIGNGU_NM?: string | null
+  FCLTY_LA?: string | number | null
+  FCLTY_LO?: string | number | null
+  distance?: number | null
+}
 
-  return Array.from({ length: count }, (_, i) => {
-    const index = startIndex + i
-    const area = areas[index % areas.length]
-
-    return {
-      id: index,
-      FCLTY_NM: `${area} ${types[index % types.length]}`,
-      FCLTY_TY_NM: types[index % types.length],
-      FCLTY_STATE_VALUE: Math.random() > 0.2 ? "운영중" : "휴무",
-      ROAD_NM_ZIP_NO: `06${Math.floor(Math.random() * 900 + 100)}`,
-      RDNMADR_ONE_NM: `서울 강남구 ${area}로 ${Math.floor(Math.random() * 200 + 1)}`,
-      RDNMADR_TWO_NM: `${Math.floor(Math.random() * 10 + 1)}층`,
-      FCLTY_LO: 127.027621 + (Math.random() - 0.5) * 0.02,
-      FCLTY_LA: 37.497942 + (Math.random() - 0.5) * 0.02,
-      FCLTY_TEL_NO: `02-${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`,
-      POSESN_MBY_CTPRVN_NM: "서울",
-      POSESN_MBY_SIGNGU_NM: "강남구",
-      DEL_AT: "N",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-  })
+interface NearbyApiResponse {
+  success: boolean
+  count?: number
+  data: NearbyRawItem[]
+  message?: string
+  meta?: {
+    centerLat?: number
+    centerLng?: number
+    radius?: number
+    totalCount?: number
+    page?: number
+    limit?: number
+  }
 }
 
 export default function FacilitiesPage() {
@@ -82,12 +90,17 @@ export default function FacilitiesPage() {
     window.scrollTo(0, 0)
   }, [])
 
-  const [isVisible, setIsVisible] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  const [facilities, setFacilities] = useState(generateMockFacilities(0, 5))
+  const [facilities, setFacilities] = useState<FacilityApiItem[]>([])
   const [page, setPage] = useState(1)
+  const [limit] = useState(20)
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [committedQuery, setCommittedQuery] = useState("")
+  const [userLat, setUserLat] = useState<number | null>(null)
+  const [userLng, setUserLng] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const observerTarget = useRef<HTMLDivElement>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
@@ -116,9 +129,7 @@ export default function FacilitiesPage() {
       document.head.appendChild(script)
     })
 
-  useEffect(() => {
-    setIsVisible(true)
-  }, [])
+  // hero animation handled inside HeroSection component
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -182,10 +193,9 @@ export default function FacilitiesPage() {
     }
   }
 
-  const matchesCategory = (f: any, category: string | null): boolean => {
+  const matchesCategory = (f: FacilityApiItem, category: string | null): boolean => {
     if (!category) return true
-    if (category === '기타') return !MAJOR_FACILITY_TYPES.includes(f.FCLTY_TY_NM)
-    return f.FCLTY_TY_NM === category
+    return f.facilityType === category
   }
 
   useEffect(() => {
@@ -194,13 +204,13 @@ export default function FacilitiesPage() {
     const { kakao } = window
     clearMarkers()
     const bounds = new kakao.maps.LatLngBounds()
-    const filtered = facilities.filter((f) => matchesCategory(f, activeCategory))
+    const filtered = facilities.filter((f) => matchesCategory(f, activeCategory) && f.latitude != null && f.longitude != null)
     const newMarkers = filtered.map((f) => {
-      const pos = new kakao.maps.LatLng(f.FCLTY_LA, f.FCLTY_LO)
+      const pos = new kakao.maps.LatLng(f.latitude, f.longitude)
       const marker = new kakao.maps.Marker({ position: pos })
       kakao.maps.event.addListener(marker, 'click', () => {
-        const phone = f.FCLTY_TEL_NO ? `<br/><span style="color:#555">${f.FCLTY_TEL_NO}</span>` : ''
-        const content = `<div style="padding:8px 10px;white-space:nowrap"><b>${f.FCLTY_NM}</b>${phone}</div>`
+        const phone = f.telNo ? `<br/><span style=\"color:#555\">${f.telNo}</span>` : ''
+        const content = `<div style=\"padding:8px 10px;white-space:nowrap\"><b>${f.facilityName}</b>${phone}</div>`
         infoWindowRef.current?.setContent(content)
         infoWindowRef.current?.open(map, marker)
       })
@@ -220,135 +230,195 @@ export default function FacilitiesPage() {
   }, [facilities, activeCategory])
 
   const handleLocateMe = () => {
-    const map = mapRef.current
-    if (!map || !navigator.geolocation || !window.kakao) return
+    if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const { kakao } = window
-        const latlng = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude)
-        const marker = new kakao.maps.Marker({ position: latlng })
-        marker.setMap(map)
-        markersRef.current.push(marker)
-        map.panTo(latlng)
+        setUserLat(pos.coords.latitude)
+        setUserLng(pos.coords.longitude)
       },
       () => {
+        setError("위치 권한을 허용하면 주변 시설을 볼 수 있어요")
         console.warn("Geolocation not permitted")
       },
     )
   }
 
-  const openDirections = (f: any) => {
-    if (!f || !f.FCLTY_LA || !f.FCLTY_LO) return
-    const name = encodeURIComponent(f.FCLTY_NM || '목적지')
-    const url = `https://map.kakao.com/link/to/${name},${f.FCLTY_LA},${f.FCLTY_LO}`
+  // 페이지 진입 시 즉시 내 위치 요청
+  useEffect(() => {
+    handleLocateMe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 내 위치가 잡히면 지도 중심을 내 위치로 이동
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || userLat == null || userLng == null || !window.kakao || !window.kakao.maps) return
+    const { kakao } = window
+    const center = new kakao.maps.LatLng(userLat, userLng)
+    map.setCenter(center)
+  }, [userLat, userLng])
+
+  const openDirections = (f: { facilityName?: string; latitude?: number | null; longitude?: number | null }) => {
+    if (!f || f.latitude == null || f.longitude == null) return
+    const name = encodeURIComponent(f.facilityName || '목적지')
+    const url = `https://map.kakao.com/link/to/${name},${f.latitude},${f.longitude}`
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
+  const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const toRad = (v: number) => (v * Math.PI) / 180
+    const R = 6371
+    const dLat = toRad(lat2 - lat1)
+    const dLon = toRad(lon2 - lon1)
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
+  // 우편번호 형식 정리: "21674.0" → "21674"
+  const formatZip = (zip?: string | null): string | null => {
+    if (!zip) return null
+    const z = String(zip).trim()
+    const m = z.match(/^(\d+)(?:\.0+)?$/)
+    return m ? m[1] : z
+  }
+
+  const fetchFacilities = async (_targetPage: number, _append: boolean) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      if (userLat == null || userLng == null) {
+        setFacilities([])
+        setHasMore(false)
+        setError("내 위치를 설정하면 주변 시설을 볼 수 있어요. 상단의 '내 위치'를 눌러주세요.")
+        return
+      }
+
+      const params = new URLSearchParams()
+      params.append('lat', String(userLat))
+      params.append('lng', String(userLng))
+      params.append('limit', String(limit))
+      params.append('radius', String(5)) // 5km 반경 (km 단위)
+      params.append('page', String(_targetPage))
+      if (activeCategory && activeCategory !== '전체') params.append('facilityType', activeCategory)
+
+      const url = `http://localhost:3001/api/sports-facilities/nearby${params.toString() ? `?${params.toString()}` : ''}`
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('서버 응답이 올바르지 않습니다.')
+      const json: NearbyApiResponse = await res.json()
+      if (!json.success) throw new Error(json.message || '요청 실패')
+
+      const normalized: FacilityApiItem[] = (json.data || []).map((item, idx) => {
+        const latRaw = item.FCLTY_LA
+        const lngRaw = item.FCLTY_LO
+        const lat = typeof latRaw === 'string' ? parseFloat(latRaw) : (latRaw ?? null as any)
+        const lng = typeof lngRaw === 'string' ? parseFloat(lngRaw) : (lngRaw ?? null as any)
+        const dist = item.distance != null ? item.distance : (lat != null && lng != null ? haversineKm(userLat, userLng, lat, lng) : null)
+        return {
+          id: item.id ?? idx,
+          facilityName: item.FCLTY_NM ?? '이름 없음',
+          facilityType: item.FCLTY_TY_NM ?? '기타',
+          stateValue: item.FCLTY_STATE_VALUE ?? null,
+          zipCode: item.ROAD_NM_ZIP_NO ?? null,
+          addressMain: item.RDNMADR_ONE_NM ?? null,
+          addressDetail: item.RDNMADR_TWO_NM ?? null,
+          telNo: item.FCLTY_TEL_NO ?? null,
+          sidoName: item.POSESN_MBY_CTPRVN_NM ?? null,
+          sigunguName: item.POSESN_MBY_SIGNGU_NM ?? null,
+          latitude: Number.isFinite(lat as any) ? (lat as number) : null,
+          longitude: Number.isFinite(lng as any) ? (lng as number) : null,
+          distance: dist,
+        }
+      })
+
+      const withCoords = normalized.filter(d => d.latitude != null && d.longitude != null)
+
+      // 클라이언트 키워드 필터
+      const keyword = committedQuery.trim()
+      const filtered = keyword
+        ? withCoords.filter(d =>
+            (d.facilityName && d.facilityName.includes(keyword)) ||
+            (d.addressMain && d.addressMain.includes(keyword))
+          )
+        : withCoords
+
+      // 카테고리는 상단 UI에서 별도 필터링되지만 혹시 모를 서버 미적용 대비
+      const byCategory = activeCategory ? filtered.filter(f => f.facilityType === activeCategory) : filtered
+
+      setFacilities(prev => (_append ? [...prev, ...byCategory] : byCategory))
+      const total = json.meta?.totalCount
+      const curPage = json.meta?.page ?? _targetPage
+      const curLimit = json.meta?.limit ?? limit
+      const more = total != null ? (curPage * curLimit < total) : ((json.data?.length || 0) === limit)
+      setHasMore(more)
+    } catch (e: any) {
+      setError(e.message || '데이터를 불러오지 못했습니다.')
+      setFacilities([])
+      setHasMore(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const loadMoreFacilities = () => {
-    if (isLoading) return
-
-    setIsLoading(true)
-
-    // Simulate API call delay
-    setTimeout(() => {
-      const newFacilities = generateMockFacilities(page * 5, 5)
-      setFacilities((prev) => [...prev, ...newFacilities])
-      setPage((prev) => prev + 1)
-      setIsLoading(false)
-
-      // Stop loading after 50 items for demo purposes
-      if (page >= 10) {
-        setHasMore(false)
-      }
-    }, 800)
+    if (isLoading || !hasMore) return
+    const next = page + 1
+    setPage(next)
+    fetchFacilities(next, true)
   }
+
+  // 초기에는 위치 설정 이후에만 데이터를 불러옵니다.
+
+  useEffect(() => {
+    setPage(1)
+    fetchFacilities(1, false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [committedQuery, activeCategory, userLat, userLng])
 
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-blue-50 to-white py-12">
-        <div className="container mx-auto max-w-7xl px-6">
-          <div className="mb-8">
-            <div
-              className={`mb-4 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-[#0074B7] transition-all duration-500 ${isVisible ? "animate-fade-in" : "opacity-0"}`}
-            >
-              <MapPin className="h-4 w-4" />
-              위치 기반 추천
-            </div>
-            <h1
-              className={`mb-4 text-4xl font-bold leading-tight tracking-tight text-gray-900 transition-all duration-700 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
-            >
-              내 주변 <span className="text-[#0074B7]">운동 시설을 찾아보세요</span>
-            </h1>
-            <p
-              className={`text-lg leading-relaxed text-gray-600 transition-all duration-700 delay-100 ${isVisible ? "animate-fade-in" : "opacity-0"}`}
-            >
-              가까운 체육관, 수영장, 헬스장 정보와 운영 시간을 확인하세요
-            </p>
-          </div>
-
-          {/* Search Bar */}
-          <div className="mb-6">
-            <div className="relative flex gap-2">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="지역명 또는 시설명 검색..."
-                  className="h-12 rounded-full border-2 pl-12 pr-4 focus-visible:ring-[#0074B7]"
-                />
-              </div>
-              <Button size="lg" className="h-12 rounded-full bg-[#0074B7] px-6 hover:bg-[#005a91]" onClick={handleLocateMe}>
+      <HeroSection
+        badgeIcon={MapPin}
+        badgeText="위치 기반 추천"
+        title="내 주변"
+        highlight="운동 시설을 찾아보세요"
+        description="가까운 체육관, 수영장, 헬스장 정보와 운영 시간을 확인하세요"
+      >
+        <div className="mb-6">
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onSearch={() => setCommittedQuery(searchQuery)}
+            placeholder="지역명 또는 시설명 검색..."
+            append={(
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-14 rounded-full border-2 border-[#0074B7] bg-white px-8 text-[#0074B7] hover:bg-gray-100 hover:text-[#0074B7] hover:border-[#005a91] focus-visible:ring-2 focus-visible:ring-[#0074B7]/40 focus-visible:ring-offset-2 transition-colors duration-150"
+                onClick={handleLocateMe}
+                title="현재 위치로 검색"
+              >
                 <Navigation className="mr-2 h-4 w-4" />내 위치
               </Button>
-            </div>
-          </div>
-
-          {/* Quick Categories */}
-          <div className="flex flex-wrap gap-3">
-            {[
-              { label: '모두' },
-              ...MAJOR_FACILITY_TYPES.map((t) => ({ label: t })),
-              { label: '기타' },
-            ].map((category, index) => {
-                // 카테고리별 고유 아이콘 매핑 (중복 없음)
-                const iconMap: Record<string, any> = {
-                  모두: MapPin,
-                  간이운동장: Flag,
-                  체력단련장: Dumbbell,
-                  골프: Mountain,
-                  당구장: CircleDot,
-                  태권도: Footprints,
-                  축구장: Trophy,
-                  실내: Building2,
-                  실외: Trees,
-                  기타: ExternalLink,
-                }
-                const Icon = iconMap[category.label] || Activity
-              const isActive = category.label === '모두' ? activeCategory === null : activeCategory === category.label
-              return (
-                <button
-                  key={category.label}
-                  onClick={() => setActiveCategory(category.label === '모두' ? null : category.label)}
-                  className={`flex items-center gap-2 rounded-full border-2 px-4 py-2 text-sm font-medium transition-all hover:scale-105 animate-fade-in-up stagger-${index + 1} ${
-                    isActive
-                      ? 'border-[#0074B7] bg-[#0074B7] text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-[#0074B7] hover:text-[#0074B7]'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {category.label}
-                </button>
-              )
-            })}
-          </div>
+            )}
+          />
         </div>
-      </section>
+        <CategoryFilter
+          categories={["전체", ...MAJOR_FACILITY_TYPES]}
+          active={activeCategory ?? "전체"}
+          onChange={(c) => setActiveCategory(c === "전체" ? null : c)}
+          className="mt-2"
+        />
+      </HeroSection>
 
       <section className="bg-white py-6">
-        <div className="container mx-auto max-w-7xl px-6">
+        <div className="container mx-auto max-w-6xl px-6">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Left: Map (give explicit height on small screens so map is visible) */}
             <div className="lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)] h-72 sm:h-96">
@@ -361,94 +431,125 @@ export default function FacilitiesPage() {
             <div className="space-y-4">
               <div className="mb-6">
                 <h2 className="mb-2 text-2xl font-bold text-gray-900">내 주변 운동 시설</h2>
-                <p className="text-gray-600">강남구 기준 {facilities.length}개 시설</p>
+                <p className="text-gray-600">총 {facilities.length}개 시설</p>
+                {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
               </div>
 
               {(() => {
-                const filtered = facilities.filter((f) => matchesCategory(f, activeCategory))
-                if (filtered.length === 0) {
+                if (!facilities.length && !isLoading && !error) {
+                  const hasLocation = userLat != null && userLng != null
+                  const hasFilter = !!committedQuery.trim() || !!activeCategory
                   return (
-                    <div className="rounded-2xl border-2 border-dashed border-gray-300 p-10 text-center text-sm text-gray-600">
-                      선택한 카테고리에 해당하는 시설이 없습니다.
-                    </div>
+                    <EmptyState
+                      message={
+                        !hasLocation
+                          ? "내 위치를 설정하면 주변 시설을 볼 수 있어요"
+                          : hasFilter
+                            ? "조건에 맞는 시설이 없습니다"
+                            : "불러올 시설이 없습니다"
+                      }
+                    />
                   )
                 }
-                return filtered.map((facility) => (
-                  <Card
-                    key={facility.id}
-                    className="group overflow-hidden rounded-2xl border-2 border-gray-200 transition-all duration-300 hover:border-[#0074B7] hover:shadow-lg"
-                  >
-                    <div className="p-5">
-                      <div className="mb-3 flex items-start justify-between">
-                        <div className="flex-1">
-                          <Badge variant="outline" className="mb-2 text-xs">
-                            {facility.FCLTY_TY_NM}
-                          </Badge>
-                          <h3 className="text-xl font-bold text-gray-900 transition-colors group-hover:text-[#0074B7]">
-                            {facility.FCLTY_NM}
-                          </h3>
-                        </div>
-                        <Badge className={facility.FCLTY_STATE_VALUE === '운영중' ? 'bg-green-500' : 'bg-gray-500'}>
-                          {facility.FCLTY_STATE_VALUE}
-                        </Badge>
-                      </div>
-                      <div className="mb-4 space-y-2 text-sm">
-                        <div className="flex items-start gap-2 text-gray-700">
-                          <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-gray-400" />
-                          <div>
-                            <p>{facility.RDNMADR_ONE_NM}</p>
-                            {facility.RDNMADR_TWO_NM && <p className="text-gray-600">{facility.RDNMADR_TWO_NM}</p>}
-                            {facility.ROAD_NM_ZIP_NO && (
-                              <p className="text-xs text-gray-500">우편번호: {facility.ROAD_NM_ZIP_NO}</p>
-                            )}
+                return facilities.map((facility) => {
+                  const one = (facility.addressMain || '').trim()
+                  const two = (facility.addressDetail || '').trim()
+                  const zip = formatZip(facility.zipCode)
+                  let addressLine = ''
+                  if (one || two) {
+                    addressLine = one
+                    if (two && (!one || !one.includes(two))) {
+                      addressLine = addressLine ? `${addressLine}, ${two}` : two
+                    }
+                    if (zip) {
+                      addressLine = addressLine ? `${addressLine} [${zip}]` : `[${zip}]`
+                    }
+                  }
+
+                  return (
+                    <Card
+                      key={facility.id}
+                      className="group overflow-hidden rounded-2xl border-2 border-gray-200 transition-all duration-300 hover:border-[#0074B7] hover:shadow-lg"
+                    >
+                      <div className="p-5">
+                        <div className="mb-3 flex items-start justify-between">
+                          <div className="flex-1">
+                            <Badge variant="outline" className="mb-2 text-xs">
+                              {facility.facilityType}
+                            </Badge>
+                            <h3 className="text-xl font-bold text-gray-900 transition-colors group-hover:text-[#0074B7]">
+                              {facility.facilityName}
+                            </h3>
                           </div>
+                          <Badge className={(facility.stateValue === '정상운영' || facility.stateValue === '운영중') ? 'bg-green-500' : 'bg-gray-500'}>
+                            {facility.stateValue || '정보없음'}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          <span>{facility.FCLTY_TEL_NO ?? '-'}</span>
+                        <div className="mb-4 space-y-2 text-sm">
+                          <div className="flex items-start gap-2 text-gray-700">
+                            <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-gray-400" />
+                            <div>
+                              {addressLine ? (
+                                <p>{addressLine}</p>
+                              ) : (
+                                <p className="text-gray-500">주소 정보 없음</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <Phone className="h-4 w-4 text-gray-400" />
+                            <span>{facility.telNo ?? '-'}</span>
+                          </div>
+                          {facility.distance != null && (
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <Clock className="h-4 w-4 text-gray-400" />
+                              <span>
+                                예상 소요: 도보 {Math.max(1, Math.round((facility.distance ?? 0) * 12))}분 · 차량 {Math.max(1, Math.round((facility.distance ?? 0) * 2))}분
+                              </span>
+                            </div>
+                          )}
+                          {facility.distance != null && (
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-xs text-gray-500">거리: {facility.distance?.toFixed(2)} km</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <Users className="h-4 w-4 text-gray-400" />
-                          <span>
-                            {facility.POSESN_MBY_CTPRVN_NM} {facility.POSESN_MBY_SIGNGU_NM}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          className="flex-1 h-10 rounded-xl bg-[#0074B7] hover:bg-[#005a91]"
-                          onClick={() => openDirections(facility)}
-                          title="카카오맵 길찾기 열기"
-                        >
-                          <Navigation className="mr-2 h-4 w-4" />
-                          길찾기
-                        </Button>
-                        {facility.FCLTY_TEL_NO ? (
-                          <Button variant="outline" className="flex-1 h-10 rounded-xl border-2 bg-transparent" asChild>
-                            <a href={`tel:${facility.FCLTY_TEL_NO}`} title="전화걸기">
+                        <div className="flex gap-2">
+                          <Button
+                            className="flex-1 h-10 rounded-xl bg-[#0074B7] hover:bg-[#005a91]"
+                            onClick={() => openDirections({ facilityName: facility.facilityName, latitude: facility.latitude, longitude: facility.longitude })}
+                            title="카카오맵 길찾기 열기"
+                            disabled={facility.latitude == null || facility.longitude == null}
+                          >
+                            <Navigation className="mr-2 h-4 w-4" />
+                            길찾기
+                          </Button>
+                          {facility.telNo ? (
+                            <Button variant="outline" className="flex-1 h-10 rounded-xl border-2 bg-transparent" asChild>
+                              <a href={`tel:${facility.telNo}`} title="전화걸기">
+                                <Phone className="mr-2 h-4 w-4" />전화
+                              </a>
+                            </Button>
+                          ) : (
+                            <Button variant="outline" className="flex-1 h-10 rounded-xl border-2 bg-transparent" disabled>
                               <Phone className="mr-2 h-4 w-4" />전화
-                            </a>
-                          </Button>
-                        ) : (
-                          <Button variant="outline" className="flex-1 h-10 rounded-xl border-2 bg-transparent" disabled>
-                            <Phone className="mr-2 h-4 w-4" />전화
-                          </Button>
-                        )}
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  )
+                })
               })()}
               {isLoading && (
                 <div className="py-8 text-center">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#0074B7] border-r-transparent" />
-                  <p className="mt-3 text-sm text-gray-600">더 많은 시설을 불러오는 중...</p>
+                  <LoadingState message="더 많은 시설을 불러오는 중..." />
                 </div>
               )}
 
               {hasMore && <div ref={observerTarget} className="h-10" />}
 
-              {!hasMore && (
+              {!hasMore && facilities.length > 0 && (
                 <div className="py-8 text-center">
                   <p className="text-sm text-gray-500">모든 시설을 불러왔습니다</p>
                 </div>
@@ -458,88 +559,7 @@ export default function FacilitiesPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t bg-gray-50 py-12">
-        <div className="container mx-auto max-w-6xl px-6">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <div className="mb-4 flex items-center gap-2">
-                <img src="/logo-icon.png" alt="국민체력지키미" className="h-8 w-8" />
-                <span className="text-lg font-bold text-gray-900">국민체력지키미</span>
-              </div>
-              <p className="text-sm leading-relaxed text-gray-600">AI 기반 맞춤형 체력 관리 플랫폼</p>
-            </div>
-            <div>
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">서비스</h3>
-              <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600">
-                <li>
-                  <Link to="/assessment" className="hover:text-[#0074B7]">
-                    체력 측정
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/recipes" className="hover:text-[#0074B7]">
-                    운동 레시피
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/facilities" className="hover:text-[#0074B7]">
-                    시설 찾기
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/community" className="hover:text-[#0074B7]">
-                    동호회
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">고객지원</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>
-                  <Link to="#" className="hover:text-[#0074B7]">
-                    공지사항
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="hover:text-[#0074B7]">
-                    FAQ
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="hover:text-[#0074B7]">
-                    문의하기
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">회사</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>
-                  <Link to="#" className="hover:text-[#0074B7]">
-                    회사 소개
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="hover:text-[#0074B7]">
-                    이용약관
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="hover:text-[#0074B7]">
-                    개인정보처리방침
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 border-t pt-8 text-center text-sm text-gray-500">
-            © 2025 국민체력지키미. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

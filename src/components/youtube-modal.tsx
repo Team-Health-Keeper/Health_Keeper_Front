@@ -49,10 +49,10 @@ export function YouTubeModal({
       <DialogContent className="!max-w-none w-[90vw] max-w-[1400px] max-h-[90vh] p-0 gap-0 overflow-hidden grid grid-rows-[auto_1fr]">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-50 rounded-full bg-white/90 hover:bg-white p-2 shadow-lg transition-all duration-200 hover:scale-110 cursor-pointer"
+          className="absolute right-4 top-4 z-50 rounded-full bg-white/95 p-3 shadow-xl ring-1 ring-black/10 transition-all duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
           aria-label="닫기"
         >
-          <X className="h-6 w-6 text-gray-800" />
+          <X className="h-6 w-6 text-gray-900" />
         </button>
 
         {title && (
@@ -70,20 +70,20 @@ export function YouTubeModal({
           {hasPrevious && (
             <Button
               onClick={handlePrevious}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-40 h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg p-0 cursor-pointer"
+              className="absolute left-[5%] top-1/2 -translate-y-1/2 z-40 h-14 w-14 rounded-full bg-white/95 shadow-xl ring-1 ring-black/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary p-0 cursor-pointer"
               aria-label="이전 영상"
             >
-              <ChevronLeft className="h-6 w-6 text-gray-800" />
+              <ChevronLeft className="h-7 w-7 text-gray-900" />
             </Button>
           )}
 
           {hasNext && (
             <Button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-40 h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg p-0 cursor-pointer"
+              className="absolute right-[5%] top-1/2 -translate-y-1/2 z-40 h-14 w-14 rounded-full bg-white/95 shadow-xl ring-1 ring-black/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary p-0 cursor-pointer"
               aria-label="다음 영상"
             >
-              <ChevronRight className="h-6 w-6 text-gray-800" />
+              <ChevronRight className="h-7 w-7 text-gray-900" />
             </Button>
           )}
 

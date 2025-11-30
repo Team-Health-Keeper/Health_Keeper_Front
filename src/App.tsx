@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import { BackToTopButton } from "./components/common/BackToTopButton";
 
 import Home from "./pages/Home";
 import Assessment from "./pages/Assessment";
@@ -14,20 +15,23 @@ import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/assessment" element={<Assessment />} />
-      <Route path="/community" element={<Community />} />
-      <Route path="/facilities" element={<Facilities />} />
-      <Route path="/my" element={<MyPage />} />
-      <Route path="/my/recipes" element={<MyRecipes />} />
-      <Route path="/recipes" element={<Recipes />} />
-      {/* Temporary static route for testing specific recipe detail without :id */}
-      <Route path="/recipes/lower-body-strength" element={<RecipeDetail />} />
-      <Route path="/recipes/:id" element={<RecipeDetail />} />
-      <Route path="/results" element={<Results />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/assessment" element={<Assessment />} />
+        <Route path="/community" element={<Community />} />
+        <Route path="/facilities" element={<Facilities />} />
+        <Route path="/my" element={<MyPage />} />
+        <Route path="/my/recipes" element={<MyRecipes />} />
+        <Route path="/recipes" element={<Recipes />} />
+        {/* Temporary static route for testing specific recipe detail without :id */}
+        <Route path="/recipes/lower-body-strength" element={<RecipeDetail />} />
+        <Route path="/recipes/:id" element={<RecipeDetail />} />
+        <Route path="/results" element={<Results />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+      </Routes>
+      <BackToTopButton />
+    </>
   );
 }
 
