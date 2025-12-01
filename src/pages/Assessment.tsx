@@ -13,6 +13,9 @@ import { YoutubeModal } from "@/components/youtube-modal"
 import { MeasurementGuideModal, guideKeyForMeasurement, hasGuideForMeasurement } from "@/components/measurement-guide-modal"
 import { SiteHeader } from "@/components/site-header"
 import { HeroSection } from "@/components/common/HeroSection"
+import { BasicInfoForm } from "@/components/assessment/BasicInfoForm"
+import { MeasurementGrid } from "@/components/assessment/MeasurementGrid"
+import { AnalyzeOverlay } from "@/components/assessment/AnalyzeOverlay"
 
 interface MeasurementCode {
   id: number
@@ -121,7 +124,6 @@ const ageGroupMeasurements = {
 }
 
 const requiredMeasurementIds = [
-  // 기본 정보(1:신장,2:체중,4:허리둘레,18:BMI) 제거 후 실제 측정 항목만 유지
   "7",
   "8",
   "28",
@@ -162,6 +164,7 @@ export default function AssessmentPage() {
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null)
   const [guideKey, setGuideKey] = useState<string | null>(null)
   const [age, setAge] = useState("")
+  const [ageMonths, setAgeMonths] = useState("")
   const [gender, setGender] = useState("")
   const [height, setHeight] = useState("")
   const [weight, setWeight] = useState("")
@@ -191,6 +194,19 @@ export default function AssessmentPage() {
   const t2 = 2 * VISIBLE_MS + 2 * FADE_MS
   const computedStageIndex = elapsedMs < t1 ? 0 : elapsedMs < t2 ? 1 : 2
   const [ellipsisCount, setEllipsisCount] = useState(0)
+
+  // Advance overlay stages with fade based on progress-derived computedStageIndex
+  useEffect(() => {
+    if (!analyzing) return
+    if (computedStageIndex === displayedStageIndex) return
+    setIsStageFading(true)
+    setTransitionDir(computedStageIndex > displayedStageIndex ? 'down' : 'up')
+    const to = setTimeout(() => {
+      setDisplayedStageIndex(computedStageIndex)
+      setIsStageFading(false)
+    }, FADE_MS)
+    return () => clearTimeout(to)
+  }, [computedStageIndex, analyzing, displayedStageIndex])
 
   useEffect(() => {
     // Fetch measurement codes from backend (sorted by name ascending)
@@ -261,6 +277,13 @@ export default function AssessmentPage() {
       setAgeWarning(null)
     }
   }, [age])
+  
+  // Reset months when not infant group
+  useEffect(() => {
+    if (ageGroup !== '유아기') {
+      setAgeMonths("")
+    }
+  }, [ageGroup])
 
   // Compute BMI from height(cm) and weight(kg) instead of manual input
   useEffect(() => {
@@ -362,7 +385,15 @@ export default function AssessmentPage() {
 
   const handleAnalyzeStart = () => {
     if (!TEMP_SKIP_VALIDATION) {
-      if (!showMeasurements || analyzing || ageWarning || !allRequiredFilled) return
+      const needsMonths = ageGroup === '유아기'
+      const monthsNum = Number.parseInt(ageMonths)
+      const monthsValid = !needsMonths || (!Number.isNaN(monthsNum) && monthsNum >= 0 && monthsNum <= 90)
+      if (!showMeasurements || analyzing || ageWarning || !allRequiredFilled || !monthsValid) {
+        if (needsMonths && !monthsValid) {
+          alert('유아기(만 4–6세)는 개월 수(0–90)를 함께 입력해주세요.')
+        }
+        return
+      }
     } else {
       if (analyzing) return
     }
@@ -399,6 +430,12 @@ export default function AssessmentPage() {
         const ageNum = Number.parseInt(age)
         if (!Number.isNaN(ageNum)) {
           req_arr.push({ measure_key: 53, measure_value: ageNum })
+        }
+        if (ageGroup === '유아기') {
+          const monthsNum = Number.parseInt(ageMonths)
+          if (!Number.isNaN(monthsNum)) {
+            req_arr.push({ measure_key: 55, measure_value: monthsNum })
+          }
         }
         if (gender) {
           // send gender as string (e.g. 'M' or 'F')
@@ -471,72 +508,14 @@ export default function AssessmentPage() {
       "AI가 입력된 값을 바탕으로 운동 처방 레시피를 만들고 있어요",
       "AI가 맞춤 결과 화면을 준비하고 있어요",
     ]
-    const showWipe = progress >= 75
     return (
-      <div className="min-h-screen bg-background">
-        <div className="relative flex h-screen w-screen flex-col items-center justify-center px-6" role="status" aria-live="polite">
-          <div className="absolute inset-0 animate-bg-breathe" aria-hidden="true" />
-          <div className="mb-12 relative h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48">
-            <img src="/logo-icon.png" alt="Health Keeper" className="h-full w-full" />
-            <span className="pointer-events-none absolute inset-0 rounded-full border-8 border-primary/20 border-t-primary/60 animate-spin" />
-          </div>
-          <div className="relative mb-10 w-full max-w-xl h-36 sm:h-40 md:h-44 flex flex-col items-center justify-center gap-4">
-            {showWipe && <span className="wipe-shine" aria-hidden="true" />}
-            {/* Top dots: stage 3 -> 2 dots, stage 2 -> 1 dot, stage 1 -> 0 */}
-            {(() => {
-              const count = displayedStageIndex === 2 ? 2 : displayedStageIndex === 1 ? 1 : 0
-              if (count <= 0) return null
-              return (
-                <div className="flex flex-col items-center gap-1.5" aria-hidden="true">
-                  {Array.from({ length: count }).map((_, i) => (
-                    <span key={i} className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-                  ))}
-                </div>
-              )
-            })()}
-            {displayedStageIndex !== 0 && isStageFading && transitionDir === 'up' && (
-              <span className="h-8 sm:h-10 w-px bg-muted-foreground/30 animate-grow-up" aria-hidden="true" />
-            )}
-            <div
-              className={
-                "flex items-center gap-4 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] " +
-                (isStageFading
-                  ? (transitionDir === 'down' ? 'origin-bottom ' : 'origin-top ') + 'opacity-0 scale-0'
-                  : (transitionDir === 'down' ? 'origin-top ' : 'origin-bottom ') + 'opacity-100 scale-100 animate-stage-in')
-              }
-            >
-              <div className={(displayedStageIndex === 1 ? 'text-lg sm:text-2xl md:text-3xl sm:whitespace-nowrap ' : 'text-xl sm:text-2xl md:text-3xl ') + 'font-bold text-foreground'}>
-                {stages[displayedStageIndex]}
-                <span aria-hidden="true" className="inline-block w-[3ch]">
-                  {'.'.repeat(ellipsisCount)}
-                </span>
-              </div>
-            </div>
-            {displayedStageIndex !== 2 && isStageFading && transitionDir === 'down' && (
-              <span className="h-8 sm:h-10 w-px bg-muted-foreground/30 animate-grow-down" aria-hidden="true" />
-            )}
-            {/* Bottom dots: stage 1 -> 2 dots, stage 2 -> 1 dot, stage 3 -> 0 */}
-            {(() => {
-              const count = displayedStageIndex === 0 ? 2 : displayedStageIndex === 1 ? 1 : 0
-              if (count <= 0) return null
-              return (
-                <div className="flex flex-col items-center gap-1.5" aria-hidden="true">
-                  {Array.from({ length: count }).map((_, i) => (
-                    <span key={i} className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-                  ))}
-                </div>
-              )
-            })()}
-          </div>
-          <div className="mb-4 text-4xl font-extrabold text-foreground tabular-nums">{progress}%</div>
-          <div className="h-3 w-full max-w-xl rounded bg-muted overflow-hidden">
-            <div
-              className="h-full bg-primary transition-[width] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
+      <AnalyzeOverlay
+        progress={progress}
+        stages={stages}
+        displayedStageIndex={displayedStageIndex}
+        isStageFading={isStageFading}
+        transitionDir={transitionDir}
+      />
     )
   }
 
@@ -558,210 +537,63 @@ export default function AssessmentPage() {
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="mx-auto max-w-3xl">
 
-          <Card>
-            <CardHeader>
-              <CardTitle>기본 정보</CardTitle>
-              <CardDescription>체력 분석에 필요한 기본 정보를 입력해주세요 (모든 항목 필수)</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="age">만 나이 *</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    placeholder="예: 30"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender">성별 *</Label>
-                  <select
-                    id="gender"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                  >
-                    <option value="">선택하세요</option>
-                    <option value="M">남성</option>
-                    <option value="F">여성</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="height">신장 (cm) *</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    step="0.1"
-                    placeholder="예: 170.5"
-                    value={height}
-                    onChange={(e) => setHeight(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight">체중 (kg) *</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.1"
-                    placeholder="예: 65.5"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="waist">허리둘레 (cm) *</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                    id="waist"
-                    type="number"
-                    step="0.1"
-                    placeholder="예: 80.0"
-                    value={waist}
-                    onChange={(e) => setWaist(e.target.value)}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 bg-transparent"
-                      onClick={() => setGuideKey('waist')}
-                      title="허리둘레 측정 가이드"
-                    >
-                      <BookOpen className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bmi">BMI (kg/㎡)</Label>
-                  <Input id="bmi" type="text" value={bmi} readOnly placeholder="신장/체중으로 자동 계산" />
-                </div>
-              </div>
-              {ageWarning && (
-                <div className="rounded-md bg-destructive/10 p-4">
-                  <p className="text-sm font-medium text-destructive">{ageWarning}</p>
-                </div>
-              )}
-
-              {ageGroup && (
-                <div className="rounded-md bg-primary/10 p-4">
-                  <p className="text-sm font-medium text-primary">연령대: {ageGroup} (만 {age}세)</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <BasicInfoForm
+            age={age}
+            ageMonths={ageMonths}
+            gender={gender}
+            height={height}
+            weight={weight}
+            waist={waist}
+            bmi={bmi}
+            ageGroup={ageGroup}
+            ageWarning={ageWarning}
+            showAgeMonths={ageGroup === '유아기'}
+            onChange={(field, value) => {
+              if (field === 'age') setAge(value)
+              else if (field === 'ageMonths') setAgeMonths(value)
+              else if (field === 'gender') setGender(value)
+              else if (field === 'height') setHeight(value)
+              else if (field === 'weight') setWeight(value)
+              else if (field === 'waist') setWaist(value)
+            }}
+            onOpenWaistGuide={() => setGuideKey('waist')}
+          />
 
           {showMeasurements && ageGroup && Object.keys(currentMeasurements).length > 0 && (
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>측정 항목</CardTitle>
-                <CardDescription>
-                  {ageGroup} 연령대에 해당하는 측정 항목입니다. 필수 항목은 반드시 입력해주세요.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!allRequiredFilled && (
-                  <div className="rounded-md bg-amber-100 px-4 py-2 text-sm text-amber-900">
-                    필수 측정값을 모두 입력하면 분석을 시작할 수 있어요.
-                  </div>
-                )}
-                <div className="grid gap-4 md:grid-cols-2">
-                  {Object.entries(currentMeasurements)
-                    // Exclude basic info fields from measurement inputs: height(1), weight(2), waist(4), BMI(18)
-                    .filter(([id]) => !["1", "2", "4", "18"].includes(id))
-                    .map(([id, name]) => {
-                      const label = String(name)
-                      const isRequired = requiredMeasurementIds.includes(id)
-                      const mc = measurementCodes.find((m) => String(m.id) === id || m.id === Number(id))
-                      const guideVideoRaw = mc?.guide_video || null
-                      const guideVideoId = guideVideoRaw ? extractYouTubeId(guideVideoRaw) : null
-                      const isWhtrField = id === "42"
-                      const isRelGripField = id === "28"
-                      const isAbsGripField = id === "52"
-                      const autoValue = (isWhtrField
-                        ? (() => {
-                            const h = Number.parseFloat(height)
-                            const wa = Number.parseFloat(waist)
-                            if (h > 0 && wa > 0) return (wa / h).toFixed(3)
-                            return ""
-                          })()
-                        : isRelGripField
-                          ? (() => {
-                              const absGrip = Number.parseFloat(measurementValues["52"] || "")
-                              const w = Number.parseFloat(weight)
-                              if (absGrip > 0 && w > 0) return ((absGrip / w) * 100).toFixed(1)
-                              return ""
-                            })()
-                          : isAbsGripField
-                            ? (() => {
-                                const left = Number.parseFloat(measurementValues["7"] || "")
-                                const right = Number.parseFloat(measurementValues["8"] || "")
-                                const hasLeft = !Number.isNaN(left) && left > 0
-                                const hasRight = !Number.isNaN(right) && right > 0
-                                if (hasLeft || hasRight) {
-                                  const maxVal = Math.max(hasLeft ? left : -Infinity, hasRight ? right : -Infinity)
-                                  if (Number.isFinite(maxVal) && maxVal > 0) return maxVal.toFixed(1)
-                                }
-                                return ""
-                              })()
-                            : "")
-                      const isAutoCalculated = ((isWhtrField && autoValue !== "") || (isRelGripField && autoValue !== "") || (isAbsGripField && autoValue !== ""))
-                      const isAutoField = isWhtrField || isRelGripField || isAbsGripField
-                    return (
-                      <div key={id} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor={`measurement-${id}`}>
-                              {label} {isRequired && <span className="text-destructive">*필수</span>}
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            {hasGuideForMeasurement(id) && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 bg-transparent"
-                                onClick={() => setGuideKey(guideKeyForMeasurement(id))}
-                                title="측정 글 가이드"
-                              >
-                                <BookOpen className="h-4 w-4" />
-                              </Button>
-                            )}
-                              {guideVideoId && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8 bg-transparent"
-                                  onClick={() => {
-                                    setSelectedTitle(cleanLabel(label))
-                                    setSelectedVideo(guideVideoId)
-                                  }}
-                                  title="측정 영상 보기"
-                                >
-                                  <Video className="h-4 w-4" />
-                                </Button>
-                              )}
-                            {!hasGuideForMeasurement(id) && !guideVideoId && (
-                              <span className="h-8 w-8 inline-block" aria-hidden="true" />
-                            )}
-                          </div>
-                        </div>
-                        <Input
-                          id={`measurement-${id}`}
-                          type="number"
-                          step="0.1"
-                          placeholder={isWhtrField ? "신장/허리둘레로 자동 계산" : (isRelGripField ? "절대악력/체중으로 자동 계산" : (isAbsGripField ? "좌/우 악력으로 자동 계산" : "값 입력"))}
-                          value={isAutoField ? autoValue : (measurementValues[id] || "")}
-                          onChange={(e) => !isAutoField && updateMeasurementValue(id, e.target.value)}
-                          readOnly={isAutoField}
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            <MeasurementGrid
+              measurementCodes={measurementCodes}
+              measurements={measurementValues}
+              currentMeasurements={currentMeasurements as any}
+              requiredMeasurementIds={requiredMeasurementIds as any}
+              autoValues={{
+                "42": (() => {
+                  const h = Number.parseFloat(height)
+                  const wa = Number.parseFloat(waist)
+                  return h > 0 && wa > 0 ? (wa / h).toFixed(3) : ""
+                })(),
+                "28": (() => {
+                  const absGrip = Number.parseFloat(measurementValues["52"] || "")
+                  const w = Number.parseFloat(weight)
+                  return absGrip > 0 && w > 0 ? ((absGrip / w) * 100).toFixed(1) : ""
+                })(),
+                "52": (() => {
+                  const left = Number.parseFloat(measurementValues["7"] || "")
+                  const right = Number.parseFloat(measurementValues["8"] || "")
+                  const hasLeft = !Number.isNaN(left) && left > 0
+                  const hasRight = !Number.isNaN(right) && right > 0
+                  if (hasLeft || hasRight) {
+                    const maxVal = Math.max(hasLeft ? left : -Infinity, hasRight ? right : -Infinity)
+                    if (Number.isFinite(maxVal) && maxVal > 0) return maxVal.toFixed(1)
+                  }
+                  return ""
+                })(),
+              }}
+              allRequiredFilled={allRequiredFilled}
+              onChange={(id, value) => updateMeasurementValue(id, value)}
+              onOpenTextGuide={(id) => setGuideKey(guideKeyForMeasurement(id))}
+              onOpenVideoGuide={(label, vid) => { setSelectedTitle(label); setSelectedVideo(vid) }}
+              extractYouTubeId={extractYouTubeId}
+            />
           )}
 
           {!showMeasurements && (
@@ -779,7 +611,19 @@ export default function AssessmentPage() {
             <Button
               size="lg"
               onClick={handleAnalyzeStart}
-              disabled={submitting || (TEMP_SKIP_VALIDATION ? analyzing : (!showMeasurements || analyzing || !!ageWarning || !allRequiredFilled))}
+              disabled={
+                submitting || (
+                  TEMP_SKIP_VALIDATION
+                    ? analyzing
+                    : (
+                        !showMeasurements ||
+                        analyzing ||
+                        !!ageWarning ||
+                        !allRequiredFilled ||
+                        (ageGroup === '유아기' && (Number.isNaN(Number.parseInt(ageMonths)) || Number.parseInt(ageMonths) < 0 || Number.parseInt(ageMonths) > 90))
+                      )
+                )
+              }
             >
             <Activity className="mr-2 h-5 w-5" />
               {analyzing ? "분석 중..." : "AI 분석 시작"}

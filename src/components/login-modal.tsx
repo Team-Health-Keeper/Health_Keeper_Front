@@ -10,7 +10,7 @@ interface KakaoLoginModalProps {
 }
 
 export function KakaoLoginModal({ isOpen, onClose, onLoginSuccess }: KakaoLoginModalProps) {
-  const handleLogin = (type: "kakao" | "naver" | "google") => {
+  const handleLogin = (type: "kakao" | "google") => {
     if (type === "kakao") {
       // Read Vite-provided env variables (client-side public vars must be prefixed with VITE_)
       const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID
@@ -26,31 +26,9 @@ export function KakaoLoginModal({ isOpen, onClose, onLoginSuccess }: KakaoLoginM
 
       const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${encodeURIComponent(
         clientId,
-      )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`
+      )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&prompt=login`
 
       console.log("Redirecting to Kakao OAuth:", authUrl)
-      window.location.assign(authUrl)
-      return
-    }
-
-    if (type === "naver") {
-      const clientId = import.meta.env.VITE_NAVER_CLIENT_ID
-      const redirectUri = import.meta.env.VITE_NAVER_REDIRECT_URI
-      if (!clientId || !redirectUri) {
-        const msg =
-          "Naver env missing: set VITE_NAVER_CLIENT_ID and VITE_NAVER_REDIRECT_URI in your frontend .env and restart dev server."
-        console.error(msg)
-        alert(msg)
-        return
-      }
-      // Generate CSRF state and store it for later verification if needed
-      const state = Math.random().toString(36).slice(2) + Date.now().toString(36)
-      sessionStorage.setItem("naver_oauth_state", state)
-
-      const authUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${encodeURIComponent(
-        clientId,
-      )}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`
-      console.log("Redirecting to Naver OAuth:", authUrl)
       window.location.assign(authUrl)
       return
     }
@@ -70,7 +48,9 @@ export function KakaoLoginModal({ isOpen, onClose, onLoginSuccess }: KakaoLoginM
       const scope = encodeURIComponent("openid profile email")
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${encodeURIComponent(
         clientId,
-      )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${encodeURIComponent(state)}&prompt=consent&access_type=offline`
+      )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${encodeURIComponent(
+        state,
+      )}&prompt=consent%20select_account&max_age=0&access_type=offline`
       console.log("Redirecting to Google OAuth:", authUrl)
       window.location.assign(authUrl)
       return
@@ -113,14 +93,6 @@ export function KakaoLoginModal({ isOpen, onClose, onLoginSuccess }: KakaoLoginM
                 <path d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z" />
               </svg>
               카카오 로그인
-            </Button>
-
-            <Button
-              onClick={() => handleLogin("naver")}
-              className="w-full bg-[#03C75A] py-6 text-base font-semibold text-white hover:bg-[#02B350] cursor-pointer"
-            >
-              <span className="mr-2 text-lg font-bold">N</span>
-              네이버 로그인
             </Button>
 
             <Button

@@ -49,6 +49,10 @@ export function SiteHeader() {
     const run = async () => {
       try {
         const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
+        const storedUser = typeof window !== "undefined" ? sessionStorage.getItem("user") : null
+        const userProvider = storedUser ? JSON.parse(storedUser).provider : null
+
+        // Call backend logout API
         await fetch("http://localhost:3001/api/auth/logout", {
           method: "POST",
           headers: {
@@ -58,6 +62,13 @@ export function SiteHeader() {
           credentials: "include",
           body: JSON.stringify({ reason: "user_logout" }),
         })
+
+        // Note: Kakao OAuth session is managed by Kakao's servers
+        // We've added prompt=login parameter to the login URL to force account selection
+        // This allows users to choose a different account on next login
+        if (userProvider === "kakao") {
+          console.log("Kakao user logged out. Next login will show account selection (prompt=login)")
+        }
       } catch (e) {
         console.warn("Logout API failed, proceeding with client cleanup:", e)
       } finally {

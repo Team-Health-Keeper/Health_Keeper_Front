@@ -1,18 +1,15 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Users, MapPin, Calendar, TrendingUp, User2, Loader2 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Users } from "lucide-react"
+import { MapPin, Calendar, TrendingUp, User2 } from "lucide-react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
-import { SearchBar } from "@/components/common/SearchBar"
-import { CategoryFilter } from "@/components/common/CategoryFilter"
-import { EmptyState } from "@/components/common/EmptyState"
-import { LoadingState } from "@/components/common/LoadingState"
 import { HeroSection } from "@/components/common/HeroSection"
+import { FiltersBar } from "@/components/community/FiltersBar"
+import { StatsSection } from "@/components/community/StatsSection"
+import { ClubsGrid } from "@/components/community/ClubsGrid"
+import type { Club } from "@/components/community/ClubCard"
 
 export default function ClubsPage() {
   useEffect(() => {
@@ -20,19 +17,6 @@ export default function ClubsPage() {
   }, [])
 
   // API 기반 상태 관리
-  interface Club {
-    id: number
-    clubName: string
-    sidoName: string
-    sigunguName: string
-    itemName: string
-    itemClassName: string
-    genderType: string
-    memberCount: number | string
-    foundedDate: string
-    createdAt?: string
-    updatedAt?: string
-  }
 
   const [clubs, setClubs] = useState<Club[]>([])
   const [page, setPage] = useState(1)
@@ -261,7 +245,7 @@ export default function ClubsPage() {
     if (page > 1) fetchClubs(false)
   }, [page])
 
-  const formatFondDe = (fondDe: string) => {
+  const formatFoundedDate = (fondDe: string) => {
     // Expecting YYYYMMDD
     if (!fondDe || fondDe.length !== 8) return fondDe
     const year = fondDe.slice(0, 4)
@@ -293,133 +277,30 @@ export default function ClubsPage() {
         centered={false}
         className="py-16"
       >
-        <div className="mx-auto max-w-3xl">
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSearch={() => fetchClubs(true)}
-            placeholder="동호회 이름, 관심 운동 검색..."
-            prepend={(
-              <div className="relative w-40 sm:w-48 shrink-0">
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="h-14 w-full appearance-none rounded-full border-2 border-gray-200 bg-white px-5 pr-10 text-sm font-medium text-gray-700 focus:border-[#0074B7] focus:outline-none focus-visible:ring-[#0074B7]"
-                >
-                  <option value="모두">모두</option>
-                  {REGIONS.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
-              </div>
-            )}
-          />
-        </div>
-        <CategoryFilter
-          className="mt-6"
-          categories={["전체", ...TOP_CATEGORY_NAMES]}
-          active={category}
-          onChange={setCategory}
+        <FiltersBar
+          regions={REGIONS}
+          selectedRegion={selectedRegion}
+          onRegionChange={setSelectedRegion}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          onSearch={() => fetchClubs(true)}
+          category={category}
+          onCategoryChange={setCategory}
+          topCategoryNames={TOP_CATEGORY_NAMES}
         />
       </HeroSection>
 
-      {/* Stats Section */}
-      <section className="border-y bg-white py-12">
-        <div className="container mx-auto max-w-6xl px-6">
-          <div className="grid gap-8 md:grid-cols-3">
-            {(() => {
-              const items = [
-                { icon: Users, label: "활성 동호회", value: stats ? `${stats.activeClubs.toLocaleString()}개` : "—" },
-                { icon: User2, label: "전체 회원", value: stats ? `${stats.totalMembers.toLocaleString()}명` : "—" },
-                // 신규 동호회: 2025년 설립 기준
-                { icon: TrendingUp, label: "신규 동호회(2025)", value: stats ? `+${stats.newClubs.toLocaleString()}개` : "—" },
-              ]
-              return items.map((stat, index) => {
-                const Icon = stat.icon
-                return (
-                  <div key={index} className="flex flex-col items-center gap-3 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
-                      <Icon className="h-7 w-7 text-[#0074B7]" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                      <p className="text-sm text-gray-600">{stat.label}</p>
-                    </div>
-                  </div>
-                )
-              })
-            })()}
-            {statsError && (
-              <div className="md:col-span-3 mt-2 text-center text-sm text-red-600">{statsError}</div>
-            )}
-          </div>
-        </div>
-      </section>
+      <StatsSection stats={stats} error={statsError} />
 
-      {/* Clubs Grid */}
-      <section className="bg-gray-50 py-16">
-        <div className="container mx-auto max-w-6xl px-6">
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">추천 동호회</h2>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredClubs.map((club, index) => (
-              <Card
-                key={`${club.id}-${index}`}
-                className="group overflow-hidden rounded-2xl border-2 transition-all hover:border-[#0074B7] hover:shadow-xl py-0"
-              >
-                <CardHeader className="px-6 pt-6">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Badge className="bg-[#0074B7] hover:bg-[#005a91]">{club.itemName}</Badge>
-                  </div>
-                  <CardTitle className="text-xl font-bold text-gray-900">{club.clubName}</CardTitle>
-                </CardHeader>
-                <CardContent className="px-6 space-y-3 pb-6">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                    {club.sigunguName}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    설립일자 {formatFondDe(club.foundedDate)}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Users className="h-4 w-4 text-gray-400" />
-                    회원 {formatMemberCount(club.memberCount)}명
-                  </div>
-                  <div className="pt-3 space-y-2 text-sm text-gray-700">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-gray-400" />
-                      성별 구분: {club.genderType}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                      지역: {club.sigunguName}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-gray-400" />
-                      체력 항목: {club.itemName}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <div ref={observerTarget} className="mt-12 text-center">
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {filteredClubs.length === 0 && !isLoading && !error && (
-              <EmptyState message="조건에 맞는 동호회가 없습니다" />
-            )}
-            {!isLoading && !error && !hasNextPage && clubs.length > 0 && (
-              <p className="text-m text-gray-600">모든 페이지를 불러왔습니다</p>
-            )}
-            {isLoading && <LoadingState message="동호회를 불러오는 중..." />}
-          </div>
-        </div>
-      </section>
+      <ClubsGrid
+        clubs={filteredClubs}
+        isLoading={isLoading}
+        error={error}
+        hasNextPage={hasNextPage}
+        observerRef={observerTarget}
+        formatFoundedDate={formatFoundedDate}
+        formatMemberCount={formatMemberCount}
+      />
 
       <SiteFooter />
     </div>

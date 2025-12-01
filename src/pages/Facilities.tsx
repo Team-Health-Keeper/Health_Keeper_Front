@@ -1,10 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { MapPin, Navigation, Phone, Clock } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 
 declare global {
@@ -14,11 +11,10 @@ declare global {
 }
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
-import { SearchBar } from "@/components/common/SearchBar"
-import { CategoryFilter } from "@/components/common/CategoryFilter"
-import { EmptyState } from "@/components/common/EmptyState"
-import { LoadingState } from "@/components/common/LoadingState"
 import { HeroSection } from "@/components/common/HeroSection"
+import { FiltersBar as FacilitiesFiltersBar } from "@/components/facilities/FiltersBar"
+import { MapPane } from "@/components/facilities/MapPane"
+import { FacilitiesList } from "@/components/facilities/FacilitiesList"
 
 // 인기 카테고리 (응답 빈도 기반)
 const MAJOR_FACILITY_TYPES = [
@@ -390,30 +386,14 @@ export default function FacilitiesPage() {
         highlight="운동 시설을 찾아보세요"
         description="가까운 체육관, 수영장, 헬스장 정보와 운영 시간을 확인하세요"
       >
-        <div className="mb-6">
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSearch={() => setCommittedQuery(searchQuery)}
-            placeholder="지역명 또는 시설명 검색..."
-            append={(
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-14 rounded-full border-2 border-[#0074B7] bg-white px-8 text-[#0074B7] hover:bg-gray-100 hover:text-[#0074B7] hover:border-[#005a91] focus-visible:ring-2 focus-visible:ring-[#0074B7]/40 focus-visible:ring-offset-2 transition-colors duration-150"
-                onClick={handleLocateMe}
-                title="현재 위치로 검색"
-              >
-                <Navigation className="mr-2 h-4 w-4" />내 위치
-              </Button>
-            )}
-          />
-        </div>
-        <CategoryFilter
+        <FacilitiesFiltersBar
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          onSearch={() => setCommittedQuery(searchQuery)}
+          onLocate={handleLocateMe}
           categories={["전체", ...MAJOR_FACILITY_TYPES]}
-          active={activeCategory ?? "전체"}
-          onChange={(c) => setActiveCategory(c === "전체" ? null : c)}
-          className="mt-2"
+          activeCategory={activeCategory ?? "전체"}
+          onCategoryChange={(c) => setActiveCategory(c === "전체" ? null : c)}
         />
       </HeroSection>
 
@@ -421,140 +401,20 @@ export default function FacilitiesPage() {
         <div className="container mx-auto max-w-6xl px-6">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Left: Map (give explicit height on small screens so map is visible) */}
-            <div className="lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)] h-72 sm:h-96">
-              <div className="h-full overflow-hidden rounded-3xl border-2 border-gray-200 shadow-lg">
-                <div ref={mapContainerRef} className="h-full w-full" />
-              </div>
-            </div>
+            <MapPane containerRef={mapContainerRef} />
 
             {/* Right: Facilities List */}
-            <div className="space-y-4">
-              <div className="mb-6">
-                <h2 className="mb-2 text-2xl font-bold text-gray-900">내 주변 운동 시설</h2>
-                <p className="text-gray-600">총 {facilities.length}개 시설</p>
-                {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
-              </div>
-
-              {(() => {
-                if (!facilities.length && !isLoading && !error) {
-                  const hasLocation = userLat != null && userLng != null
-                  const hasFilter = !!committedQuery.trim() || !!activeCategory
-                  return (
-                    <EmptyState
-                      message={
-                        !hasLocation
-                          ? "내 위치를 설정하면 주변 시설을 볼 수 있어요"
-                          : hasFilter
-                            ? "조건에 맞는 시설이 없습니다"
-                            : "불러올 시설이 없습니다"
-                      }
-                    />
-                  )
-                }
-                return facilities.map((facility) => {
-                  const one = (facility.addressMain || '').trim()
-                  const two = (facility.addressDetail || '').trim()
-                  const zip = formatZip(facility.zipCode)
-                  let addressLine = ''
-                  if (one || two) {
-                    addressLine = one
-                    if (two && (!one || !one.includes(two))) {
-                      addressLine = addressLine ? `${addressLine}, ${two}` : two
-                    }
-                    if (zip) {
-                      addressLine = addressLine ? `${addressLine} [${zip}]` : `[${zip}]`
-                    }
-                  }
-
-                  return (
-                    <Card
-                      key={facility.id}
-                      className="group overflow-hidden rounded-2xl border-2 border-gray-200 transition-all duration-300 hover:border-[#0074B7] hover:shadow-lg"
-                    >
-                      <div className="p-5">
-                        <div className="mb-3 flex items-start justify-between">
-                          <div className="flex-1">
-                            <Badge variant="outline" className="mb-2 text-xs">
-                              {facility.facilityType}
-                            </Badge>
-                            <h3 className="text-xl font-bold text-gray-900 transition-colors group-hover:text-[#0074B7]">
-                              {facility.facilityName}
-                            </h3>
-                          </div>
-                          <Badge className={(facility.stateValue === '정상운영' || facility.stateValue === '운영중') ? 'bg-green-500' : 'bg-gray-500'}>
-                            {facility.stateValue || '정보없음'}
-                          </Badge>
-                        </div>
-                        <div className="mb-4 space-y-2 text-sm">
-                          <div className="flex items-start gap-2 text-gray-700">
-                            <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-gray-400" />
-                            <div>
-                              {addressLine ? (
-                                <p>{addressLine}</p>
-                              ) : (
-                                <p className="text-gray-500">주소 정보 없음</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-700">
-                            <Phone className="h-4 w-4 text-gray-400" />
-                            <span>{facility.telNo ?? '-'}</span>
-                          </div>
-                          {facility.distance != null && (
-                            <div className="flex items-center gap-2 text-gray-700">
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              <span>
-                                예상 소요: 도보 {Math.max(1, Math.round((facility.distance ?? 0) * 12))}분 · 차량 {Math.max(1, Math.round((facility.distance ?? 0) * 2))}분
-                              </span>
-                            </div>
-                          )}
-                          {facility.distance != null && (
-                            <div className="flex items-center gap-2 text-gray-700">
-                              <span className="text-xs text-gray-500">거리: {facility.distance?.toFixed(2)} km</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            className="flex-1 h-10 rounded-xl bg-[#0074B7] hover:bg-[#005a91]"
-                            onClick={() => openDirections({ facilityName: facility.facilityName, latitude: facility.latitude, longitude: facility.longitude })}
-                            title="카카오맵 길찾기 열기"
-                            disabled={facility.latitude == null || facility.longitude == null}
-                          >
-                            <Navigation className="mr-2 h-4 w-4" />
-                            길찾기
-                          </Button>
-                          {facility.telNo ? (
-                            <Button variant="outline" className="flex-1 h-10 rounded-xl border-2 bg-transparent" asChild>
-                              <a href={`tel:${facility.telNo}`} title="전화걸기">
-                                <Phone className="mr-2 h-4 w-4" />전화
-                              </a>
-                            </Button>
-                          ) : (
-                            <Button variant="outline" className="flex-1 h-10 rounded-xl border-2 bg-transparent" disabled>
-                              <Phone className="mr-2 h-4 w-4" />전화
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  )
-                })
-              })()}
-              {isLoading && (
-                <div className="py-8 text-center">
-                  <LoadingState message="더 많은 시설을 불러오는 중..." />
-                </div>
-              )}
-
-              {hasMore && <div ref={observerTarget} className="h-10" />}
-
-              {!hasMore && facilities.length > 0 && (
-                <div className="py-8 text-center">
-                  <p className="text-sm text-gray-500">모든 시설을 불러왔습니다</p>
-                </div>
-              )}
-            </div>
+            <FacilitiesList
+              facilities={facilities}
+              error={error}
+              isLoading={isLoading}
+              hasMore={hasMore}
+              observerRef={observerTarget}
+              userHasLocation={userLat != null && userLng != null}
+              hasFilter={!!committedQuery.trim() || !!activeCategory}
+              formatZip={formatZip}
+              onDirections={openDirections}
+            />
           </div>
         </div>
       </section>
