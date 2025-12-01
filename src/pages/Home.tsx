@@ -164,9 +164,9 @@ export default function Home() {
                       className="border-2 border-gray-300 px-8 py-6 text-base hover:bg-gray-50 bg-transparent"
                       asChild
                     >
-                      <Link to="#how-it-works">
-                        <Video className="mr-2 h-5 w-5" />
-                        사용 방법 보기
+                      <Link to="/recipes">
+                        <BookOpen className="mr-2 h-5 w-5" />
+                        맞춤 운동 레시피 보기
                       </Link>
                     </Button>
                   </div>
