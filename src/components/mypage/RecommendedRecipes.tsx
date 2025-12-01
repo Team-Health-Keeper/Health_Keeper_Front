@@ -10,21 +10,24 @@ interface RecommendedRecipesProps {
 }
 
 export function RecommendedRecipes({ recipes }: RecommendedRecipesProps) {
+  // 최신 2개만 표시
+  const displayRecipes = recipes?.slice(0, 2) || [];
+
   return (
     <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
       <CardHeader className="p-4 sm:p-6">
         <CardTitle className="flex items-center gap-2 text-primary text-base sm:text-lg">
           <Award className="h-5 w-5 sm:h-6 sm:w-6" />
-          내가 추천받은 운동 레시피
+          최근 내가 추천받은 운동 레시피
         </CardTitle>
         <p className="text-xs sm:text-sm text-muted-foreground">
           체력 분석 결과를 바탕으로 당신에게 필요한 운동입니다
         </p>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
-        {recipes && recipes.length > 0 ? (
+        {displayRecipes.length > 0 ? (
           <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2">
-            {recipes.map((recipe) => (
+            {displayRecipes.map((recipe) => (
               <Link key={recipe.id} to={`/recipes/${recipe.id}`}>
                 <Card className="group h-full cursor-pointer overflow-hidden border-border transition-all hover:border-primary/50 hover:shadow-xl hover:-translate-y-1">
                   <CardContent className="p-4 sm:p-6">

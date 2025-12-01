@@ -160,14 +160,14 @@ export function StatsOverviewCard({
               )}
             </div>
 
-            {/* 체력측정 - 클릭 가능 */}
+            {/* 체력측정 - 클릭 가능 (measurementHistory 기준) */}
             <button
               type="button"
               onClick={() => setShowMeasurementModal(true)}
               className="text-center p-2 sm:p-3 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 transition-colors cursor-pointer"
             >
               <div className="text-lg sm:text-2xl font-bold text-purple-600">
-                {grassStats.measurement}
+                {measurementHistory?.length || 0}
               </div>
               <div className="text-[10px] sm:text-xs text-muted-foreground">
                 체력측정

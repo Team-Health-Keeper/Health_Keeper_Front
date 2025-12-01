@@ -425,93 +425,63 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
         </div>
 
         {/* 데스크톱: 연간 뷰 */}
-        <div
-          className="hidden sm:block overflow-x-auto max-w-full"
-          ref={scrollContainerRef}
-        >
-          <div className="relative inline-flex flex-col gap-1 min-w-max">
-            {/* 월 라벨 */}
-            <div className="flex gap-1 mb-2 relative h-5">
-              {monthLabels.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="absolute text-xs text-muted-foreground whitespace-nowrap"
-                  style={{ left: `${item.weekIndex * 16}px` }}
-                >
-                  {item.label}
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-1">
-              {calendarData.map((week, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-1">
-                  {week.map((day, dayIndex) => (
-                    <div
-                      key={dayIndex}
-                      className="relative"
-                      ref={(node) => {
-                        if (node) {
-                          const today = new Date();
-                          const todayStr = `${today.getFullYear()}-${String(
-                            today.getMonth() + 1
-                          ).padStart(2, '0')}-${String(
-                            today.getDate()
-                          ).padStart(2, '0')}`;
-                          if (day.date === todayStr) {
-                            todayCellRef.current = node;
+        <div className="hidden sm:block relative">
+          <div className="overflow-x-auto max-w-full" ref={scrollContainerRef}>
+            <div className="relative inline-flex flex-col gap-1 min-w-max">
+              {/* 월 라벨 */}
+              <div className="flex gap-1 mb-2 relative h-5">
+                {monthLabels.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="absolute text-xs text-muted-foreground whitespace-nowrap"
+                    style={{ left: `${item.weekIndex * 16}px` }}
+                  >
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-1">
+                {calendarData.map((week, weekIndex) => (
+                  <div key={weekIndex} className="flex flex-col gap-1">
+                    {week.map((day, dayIndex) => (
+                      <div
+                        key={dayIndex}
+                        className="relative"
+                        ref={(node) => {
+                          if (node) {
+                            const today = new Date();
+                            const todayStr = `${today.getFullYear()}-${String(
+                              today.getMonth() + 1
+                            ).padStart(2, '0')}-${String(
+                              today.getDate()
+                            ).padStart(2, '0')}`;
+                            if (day.date === todayStr) {
+                              todayCellRef.current = node;
+                            }
                           }
-                        }
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className={`h-3 w-3 rounded-sm ${
-                          !day.isCurrentYear
-                            ? 'bg-transparent'
-                            : day.intensity === 0
-                            ? 'bg-muted'
-                            : day.intensity === 1
-                            ? 'bg-primary/30'
-                            : day.intensity === 2
-                            ? 'bg-primary/60'
-                            : 'bg-primary'
-                        } transition-colors ${
-                          day.isCurrentYear
-                            ? 'cursor-pointer'
-                            : 'cursor-default'
-                        }`}
-                        disabled={!day.isCurrentYear}
-                        onMouseEnter={(e) => {
-                          if (!day.isCurrentYear) return;
-                          if (pinnedDate && pinnedDate !== day.date) return;
-                          setActiveDetail({
-                            date: day.date,
-                            attendance: day.attendance,
-                            videoWatch: day.videoWatch,
-                            measurement: day.measurement,
-                            intensity: day.intensity,
-                          });
-                          const rect = (
-                            e.currentTarget as HTMLElement
-                          ).getBoundingClientRect();
-                          setTooltipPos({
-                            x: rect.left + rect.width / 2,
-                            y: rect.top - 8,
-                          });
                         }}
-                        onMouseLeave={() => {
-                          if (pinnedDate) return;
-                          setActiveDetail(null);
-                          setTooltipPos(null);
-                        }}
-                        onClick={(e) => {
-                          if (!day.isCurrentYear) return;
-                          if (pinnedDate === day.date) {
-                            setPinnedDate(null);
-                            setActiveDetail(null);
-                            setTooltipPos(null);
-                          } else {
-                            setPinnedDate(day.date);
+                      >
+                        <button
+                          type="button"
+                          className={`h-3 w-3 rounded-sm ${
+                            !day.isCurrentYear
+                              ? 'bg-transparent'
+                              : day.intensity === 0
+                              ? 'bg-muted'
+                              : day.intensity === 1
+                              ? 'bg-primary/30'
+                              : day.intensity === 2
+                              ? 'bg-primary/60'
+                              : 'bg-primary'
+                          } transition-colors ${
+                            day.isCurrentYear
+                              ? 'cursor-pointer'
+                              : 'cursor-default'
+                          }`}
+                          disabled={!day.isCurrentYear}
+                          onMouseEnter={(e) => {
+                            if (!day.isCurrentYear) return;
+                            if (pinnedDate && pinnedDate !== day.date) return;
                             setActiveDetail({
                               date: day.date,
                               attendance: day.attendance,
@@ -526,41 +496,72 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
                               x: rect.left + rect.width / 2,
                               y: rect.top - 8,
                             });
+                          }}
+                          onMouseLeave={() => {
+                            if (pinnedDate) return;
+                            setActiveDetail(null);
+                            setTooltipPos(null);
+                          }}
+                          onClick={(e) => {
+                            if (!day.isCurrentYear) return;
+                            if (pinnedDate === day.date) {
+                              setPinnedDate(null);
+                              setActiveDetail(null);
+                              setTooltipPos(null);
+                            } else {
+                              setPinnedDate(day.date);
+                              setActiveDetail({
+                                date: day.date,
+                                attendance: day.attendance,
+                                videoWatch: day.videoWatch,
+                                measurement: day.measurement,
+                                intensity: day.intensity,
+                              });
+                              const rect = (
+                                e.currentTarget as HTMLElement
+                              ).getBoundingClientRect();
+                              setTooltipPos({
+                                x: rect.left + rect.width / 2,
+                                y: rect.top - 8,
+                              });
+                            }
+                          }}
+                          aria-label={
+                            day.isCurrentYear
+                              ? `${day.date} 출석 ${
+                                  day.attendance ? 'O' : 'X'
+                                }, 영상 시청 ${
+                                  day.videoWatch ? 'O' : 'X'
+                                }, 체력 측정 ${day.measurement ? 'O' : 'X'}`
+                              : ''
                           }
-                        }}
-                        aria-label={
-                          day.isCurrentYear
-                            ? `${day.date} 출석 ${
-                                day.attendance ? 'O' : 'X'
-                              }, 영상 시청 ${
-                                day.videoWatch ? 'O' : 'X'
-                              }, 체력 측정 ${day.measurement ? 'O' : 'X'}`
-                            : ''
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-              ))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
+            {activeDetail &&
+              tooltipPos &&
+              createPortal(
+                <div
+                  className="fixed z-[1000] w-max rounded-md border bg-popover px-2 py-1 text-[11px] text-popover-foreground shadow-sm"
+                  style={{
+                    left: tooltipPos.x,
+                    top: tooltipPos.y,
+                    transform: 'translate(-50%, -100%)',
+                  }}
+                >
+                  {activeDetail.date} · 출석{' '}
+                  {activeDetail.attendance ? 'O' : 'X'} · 영상{' '}
+                  {activeDetail.videoWatch ? 'O' : 'X'} · 측정{' '}
+                  {activeDetail.measurement ? 'O' : 'X'}
+                </div>,
+                document.body
+              )}
           </div>
-          {activeDetail &&
-            tooltipPos &&
-            createPortal(
-              <div
-                className="fixed z-[1000] w-max rounded-md border bg-popover px-2 py-1 text-[11px] text-popover-foreground shadow-sm"
-                style={{
-                  left: tooltipPos.x,
-                  top: tooltipPos.y,
-                  transform: 'translate(-50%, -100%)',
-                }}
-              >
-                {activeDetail.date} · 출석 {activeDetail.attendance ? 'O' : 'X'}{' '}
-                · 영상 {activeDetail.videoWatch ? 'O' : 'X'} · 측정{' '}
-                {activeDetail.measurement ? 'O' : 'X'}
-              </div>,
-              document.body
-            )}
+          {/* 범례 - 스크롤 영역 밖에 고정 */}
           <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
             <span>적음</span>
             <div className="h-3 w-3 rounded-sm bg-muted" />

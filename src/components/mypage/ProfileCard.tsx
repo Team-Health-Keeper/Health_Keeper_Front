@@ -32,13 +32,13 @@ export function ProfileCard({
 
         <div className="space-y-2 sm:space-y-3 rounded-lg bg-muted/50 p-3 sm:p-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">체력 등급</span>
+            <span className="text-muted-foreground">최근 나의 체력 등급</span>
             <Badge className="bg-primary text-primary-foreground">
               {profile.fitnessGrade || '-'}
             </Badge>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">전체 순위</span>
+            <span className="text-muted-foreground">최근 나의 전체 순위</span>
             <span className="font-semibold text-foreground">
               상위 {ranking.topPercent || 0}%
             </span>
