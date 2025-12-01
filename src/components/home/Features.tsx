@@ -7,7 +7,7 @@ export const Features: FC = () => {
     { icon: BookOpen, title: "카테고리별 운동 레시피", description: "하체 강화, 유연성 향상 등 목적에 맞는 운동 프로그램", color: "#10B981" },
     { icon: Video, title: "전문가 운동 영상", description: "국민체력100의 검증된 운동 가이드 영상 제공", color: "#8B5CF6" },
     { icon: MapPin, title: "위치 기반 시설 찾기", description: "주변 체육시설과 수강 가능한 강좌를 지도에서 확인", color: "#F59E0B" },
-    { icon: Users, title: "동호회 추천", description: "관심사가 맞는 동호회를 찾고 함께 운동하세요", color: "#EF4444" },
+    { icon: Users, title: "동호회 추천", description: "검증된 데이터로 동호회를 추천받아 보세요", color: "#EF4444" },
     { icon: Activity, title: "운동 일지 & 성취 배지", description: "운동 기록을 관리하고 목표 달성 시 배지를 획득하세요", color: "#06B6D4" },
   ];
   return (

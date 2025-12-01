@@ -271,9 +271,9 @@ export default function ClubsPage() {
       <HeroSection
         badgeIcon={Users}
         badgeText="함께하는 운동"
-        title="관심사가 맞는"
-        highlight="동호회를 찾아보세요"
-        description="혼자 운동하기 힘드신가요? 같은 목표를 가진 사람들과 함께 운동하세요"
+        title="검증된 데이터로"
+        highlight="동호회를 추천받아 보세요"
+        description="체력 등급·관심사·지역 기반으로 딱 맞는 모임을 추천합니다"
         centered={false}
         className="py-16"
       >
