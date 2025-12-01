@@ -20,6 +20,7 @@ export default function RecipesPage() {
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(9)
+  const [forMe, setForMe] = useState<'Y' | 'N'>('N') // 전체 보기: N, 내 레시피: Y
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [apiRecipes, setApiRecipes] = useState<Array<{
@@ -53,6 +54,7 @@ export default function RecipesPage() {
         const params = new URLSearchParams()
         params.set("page", String(page))
         params.set("limit", String(limit))
+        params.set("for_me", forMe)
         if (search.trim()) params.set("recipe_title", search.trim())
         const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
         const res = await fetch(`http://localhost:3001/api/recipes?${params.toString()}`,
@@ -90,7 +92,7 @@ export default function RecipesPage() {
       controller.abort()
       clearTimeout(timer)
     }
-  }, [page, limit, search])
+  }, [page, limit, search, forMe])
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,6 +142,35 @@ export default function RecipesPage() {
                 {category}
               </Badge>
             ))}
+          </div>
+
+          {/* 카테고리 아래 토글 스위치 (우측 정렬) */}
+          <div className="flex items-center gap-3 justify-end">
+            <span className={forMe === 'N' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+              전체 보기
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={forMe === 'Y'}
+              aria-label="내 레시피 보기 토글"
+              onClick={() => {
+                setPage(1)
+                setForMe((prev) => (prev === 'Y' ? 'N' : 'Y'))
+              }}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40 ${
+                forMe === 'Y' ? 'bg-primary' : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                  forMe === 'Y' ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className={forMe === 'Y' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+              내 레시피 보기
+            </span>
           </div>
         </div>
 
