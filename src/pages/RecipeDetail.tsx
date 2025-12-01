@@ -31,7 +31,12 @@ interface RecipeDetailResponse {
   duration_min: number
   card_count: number
   category?: string | null // API에 카테고리 값이 있으면 사용, 없으면 숨김
-  data: RecipeExercise[]
+  // 신규 스키마
+  warm_up_cards?: RecipeExercise[]
+  main_cards?: RecipeExercise[]
+  cool_down_cards?: RecipeExercise[]
+  // 구 스키마 호환
+  data?: RecipeExercise[]
 }
 
 function extractYouTubeId(input: string): string {
@@ -113,7 +118,15 @@ export default function RecipeDetailPage() {
           card_count: data.card_count,
           category: data.category ?? null,
         })
-        setExercises(Array.isArray(data.data) ? data.data : [])
+        // 새 스키마(warm_up_cards/main_cards/cool_down_cards) 우선 사용, 없으면 구 스키마(data) 사용
+        const warm = Array.isArray(data.warm_up_cards) ? data.warm_up_cards.map((e) => ({ ...e, phase: 'warmup' as const })) : []
+        const main = Array.isArray(data.main_cards) ? data.main_cards.map((e) => ({ ...e, phase: 'main' as const })) : []
+        const cool = Array.isArray(data.cool_down_cards) ? data.cool_down_cards.map((e) => ({ ...e, phase: 'cooldown' as const })) : []
+        if (warm.length + main.length + cool.length > 0) {
+          setExercises([...warm, ...main, ...cool])
+        } else {
+          setExercises(Array.isArray(data.data) ? data.data : [])
+        }
       } catch (e: any) {
         if (!ignore) setError(e.message || "레시피를 불러오지 못했습니다")
       } finally {
@@ -175,7 +188,7 @@ export default function RecipeDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mx-auto max-w-6xl px-4 py-12">
         {loading && (
           <div className="py-20 text-center text-muted-foreground">불러오는 중...</div>
         )}
@@ -217,12 +230,12 @@ export default function RecipeDetailPage() {
               </div>
             </div>
 
-            {/* 준비운동 섹션 */}
+            {/* 준비 운동 섹션 */}
             {hasPhaseInfo && warmupExercises.length > 0 && (
               <section className="mb-12">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="h-10 w-1 bg-green-500 rounded-full" />
-                  <h2 className="text-2xl font-bold text-foreground">준비운동</h2>
+                  <h2 className="text-2xl font-bold text-foreground">준비 운동</h2>
                   <Badge variant="secondary">{warmupExercises.length}개</Badge>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -233,11 +246,11 @@ export default function RecipeDetailPage() {
               </section>
             )}
 
-            {/* 본운동 섹션 (phase 정보 없으면 전체를 본운동으로 표시) */}
+            {/* 본 운동 섹션 (phase 정보 없으면 전체를 본운동으로 표시) */}
             <section className="mb-12">
               <div className="flex items-center gap-3 mb-6">
                 <div className="h-10 w-1 bg-primary rounded-full" />
-                <h2 className="text-2xl font-bold text-foreground">본운동</h2>
+                <h2 className="text-2xl font-bold text-foreground">본 운동</h2>
                 <Badge variant="secondary">{hasPhaseInfo ? mainExercises.length : totalExercises}개</Badge>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -247,12 +260,12 @@ export default function RecipeDetailPage() {
               </div>
             </section>
 
-            {/* 정리운동 섹션 */}
+            {/* 마무리 운동 섹션 */}
             {hasPhaseInfo && cooldownExercises.length > 0 && (
               <section className="mb-12">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="h-10 w-1 bg-blue-500 rounded-full" />
-                  <h2 className="text-2xl font-bold text-foreground">정리운동</h2>
+                  <h2 className="text-2xl font-bold text-foreground">마무리 운동</h2>
                   <Badge variant="secondary">{cooldownExercises.length}개</Badge>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
