@@ -186,7 +186,7 @@ export default function ResultsPage() {
               <div className="mb-4">
                 <p className="mb-2 text-sm font-semibold text-muted-foreground">당신의 체력 등급</p>
                 <div className="mb-2 text-6xl font-bold text-primary">B+</div>
-                <p className="text-sm text-muted-foreground">상위 35% (지역 기준)</p>
+                <p className="text-sm text-muted-foreground">상위 35% (전체 기준)</p>
               </div>
               <div className="mx-auto max-w-md">
                 <div className="mb-2 h-3 overflow-hidden rounded-full bg-muted">
@@ -251,7 +251,7 @@ export default function ResultsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Award className="h-5 w-5 text-primary" />
-                  지역 순위
+                  전체 순위
                 </CardTitle>
               </CardHeader>
               <CardContent>

@@ -3,7 +3,7 @@ import { FC } from "react";
 
 export const Features: FC = () => {
   const items = [
-    { icon: Award, title: "체력 등급 & 지역 순위", description: "나의 체력 등급을 확인하고 지역 내 순위를 비교해보세요", color: "#0074B7" },
+    { icon: Award, title: "체력 등급 & 전체 순위", description: "나의 체력 등급을 확인하고 전체 내 순위를 비교해보세요", color: "#0074B7" },
     { icon: BookOpen, title: "카테고리별 운동 레시피", description: "하체 강화, 유연성 향상 등 목적에 맞는 운동 프로그램", color: "#10B981" },
     { icon: Video, title: "전문가 운동 영상", description: "국민체력100의 검증된 운동 가이드 영상 제공", color: "#8B5CF6" },
     { icon: MapPin, title: "위치 기반 시설 찾기", description: "주변 체육시설과 수강 가능한 강좌를 지도에서 확인", color: "#F59E0B" },
