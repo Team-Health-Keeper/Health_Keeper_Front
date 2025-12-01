@@ -14,6 +14,39 @@ import { MeasurementGuideModal, guideKeyForMeasurement, hasGuideForMeasurement }
 import { SiteHeader } from "@/components/site-header"
 import { HeroSection } from "@/components/common/HeroSection"
 
+interface MeasurementCode {
+  id: number
+  measurement_code_name: string
+  guide_video: string | null
+}
+
+// Extract YouTube video ID from a full URL or return the given ID
+function extractYouTubeId(input: string): string {
+  try {
+    // If input looks like a bare ID, return as-is
+    if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input
+    const url = new URL(input)
+    // Handle youtu.be short links
+    if (url.hostname.includes("youtu.be")) {
+      const id = url.pathname.replace("/", "")
+      if (id) return id
+    }
+    // Handle youtube watch URLs
+    if (url.searchParams.has("v")) {
+      const id = url.searchParams.get("v") || ""
+      if (id) return id
+    }
+    // Handle embed URLs
+    if (url.pathname.includes("/embed/")) {
+      const id = url.pathname.split("/embed/")[1]
+      if (id) return id
+    }
+  } catch (_) {
+    // Not a URL, fall through
+  }
+  return input
+}
+
 const ageGroupMeasurements = {
   유아기: {
     "7": "악력_좌(kg)",
@@ -121,9 +154,11 @@ export default function AssessmentPage() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
+  const [measurementCodes, setMeasurementCodes] = useState<MeasurementCode[]>([])
 
   const navigate = useNavigate()
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
+  const [selectedTitle, setSelectedTitle] = useState<string | null>(null)
   const [guideKey, setGuideKey] = useState<string | null>(null)
   const [age, setAge] = useState("")
   const [gender, setGender] = useState("")
@@ -154,6 +189,29 @@ export default function AssessmentPage() {
   const t2 = 2 * VISIBLE_MS + 2 * FADE_MS
   const computedStageIndex = elapsedMs < t1 ? 0 : elapsedMs < t2 ? 1 : 2
   const [ellipsisCount, setEllipsisCount] = useState(0)
+
+  useEffect(() => {
+    // Fetch measurement codes from backend (sorted by name ascending)
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
+    fetch("http://localhost:3001/api/measurement/measurement-codes", {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`)
+        }
+        return res.json()
+      })
+      .then((payload: { success?: boolean; data?: MeasurementCode[] } | MeasurementCode[]) => {
+        const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data! : []
+        setMeasurementCodes(list)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch measurement codes:", err)
+      })
+  }, [])
 
   useEffect(() => {
     if (!analyzing) return
@@ -249,6 +307,9 @@ export default function AssessmentPage() {
       [id]: value,
     }))
   }
+
+  // 라벨에서 "*필수" 텍스트를 제거하여 모달 제목에 사용
+  const cleanLabel = (label: string) => label.replace(/\s*\*필수\s*$/, "")
 
   const handleAnalyzeStart = () => {
     if (!TEMP_SKIP_VALIDATION) {
@@ -484,7 +545,10 @@ export default function AssessmentPage() {
                     .filter(([id]) => !["1", "2", "4", "18"].includes(id))
                     .map(([id, name]) => {
                       const label = String(name)
-                    const isRequired = requiredMeasurementIds.includes(id)
+                      const isRequired = requiredMeasurementIds.includes(id)
+                      const mc = measurementCodes.find((m) => String(m.id) === id || m.id === Number(id))
+                      const guideVideoRaw = mc?.guide_video || null
+                      const guideVideoId = guideVideoRaw ? extractYouTubeId(guideVideoRaw) : null
                     return (
                       <div key={id} className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -504,16 +568,24 @@ export default function AssessmentPage() {
                                 <BookOpen className="h-4 w-4" />
                               </Button>
                             )}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 bg-transparent"
-                              onClick={() => setSelectedVideo("dQw4w9WgXcQ")}
-                              title="측정 영상 보기"
-                            >
-                              <Video className="h-4 w-4" />
-                            </Button>
+                              {guideVideoId && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 bg-transparent"
+                                  onClick={() => {
+                                    setSelectedTitle(cleanLabel(label))
+                                    setSelectedVideo(guideVideoId)
+                                  }}
+                                  title="측정 영상 보기"
+                                >
+                                  <Video className="h-4 w-4" />
+                                </Button>
+                              )}
+                            {!hasGuideForMeasurement(id) && !guideVideoId && (
+                              <span className="h-8 w-8 inline-block" aria-hidden="true" />
+                            )}
                           </div>
                         </div>
                         <Input
@@ -549,7 +621,7 @@ export default function AssessmentPage() {
               onClick={handleAnalyzeStart}
               disabled={TEMP_SKIP_VALIDATION ? analyzing : (!showMeasurements || analyzing || !!ageWarning || !allRequiredFilled)}
             >
-              <Activity className="mr-2 h-5 w-5" />
+            <Activity className="mr-2 h-5 w-5" />
               {analyzing ? "분석 중..." : "AI 분석 시작"}
             </Button>
           </div>
@@ -557,14 +629,20 @@ export default function AssessmentPage() {
       </div>
 
       {selectedVideo && (
-        <YoutubeModal videoId={selectedVideo} isOpen={!!selectedVideo} onClose={() => setSelectedVideo(null)} />
+        <YoutubeModal
+          title={selectedTitle || undefined}
+          videoId={selectedVideo}
+          isOpen={!!selectedVideo}
+          onClose={() => {
+            setSelectedVideo(null)
+            setSelectedTitle(null)
+          }}
+        />
       )}
 
       {guideKey && (
         <MeasurementGuideModal isOpen={!!guideKey} onClose={() => setGuideKey(null)} guideKey={guideKey} />
       )}
-
-      {/* 분석 중 화면은 별도 뷰로 전환되므로 Dialog 제거 */}
     </div>
   )
 }
