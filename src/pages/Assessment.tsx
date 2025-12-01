@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -155,6 +155,7 @@ export default function AssessmentPage() {
     window.scrollTo(0, 0)
   }, [])
   const [measurementCodes, setMeasurementCodes] = useState<MeasurementCode[]>([])
+  const fetchOnceRef = useRef(false)
 
   const navigate = useNavigate()
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
@@ -171,6 +172,7 @@ export default function AssessmentPage() {
   const [showMeasurements, setShowMeasurements] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
   const [ageWarning, setAgeWarning] = useState<string | null>(null)
 
   const [measurementValues, setMeasurementValues] = useState<Record<string, string>>({})
@@ -192,6 +194,8 @@ export default function AssessmentPage() {
 
   useEffect(() => {
     // Fetch measurement codes from backend (sorted by name ascending)
+    if (fetchOnceRef.current) return
+    fetchOnceRef.current = true
     const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
     fetch("http://localhost:3001/api/measurement/measurement-codes", {
       headers: {
@@ -214,24 +218,11 @@ export default function AssessmentPage() {
   }, [])
 
   useEffect(() => {
-    if (!analyzing) return
-    if (displayedStageIndex === computedStageIndex) return
-    const dir = computedStageIndex > displayedStageIndex ? 'down' : 'up'
-    setTransitionDir(dir)
-    setIsStageFading(true)
-    const t = setTimeout(() => {
-      setDisplayedStageIndex(computedStageIndex)
-      setIsStageFading(false)
-    }, FADE_MS)
-    return () => clearTimeout(t)
-  }, [computedStageIndex, analyzing])
-
-  // 점점점(ellipsis) 애니메이션: 단계가 바뀌면 0부터 다시 시작
-  useEffect(() => {
     if (!analyzing) {
       setEllipsisCount(0)
       return
     }
+
     setEllipsisCount(0)
     const iv = setInterval(() => {
       setEllipsisCount((c) => (c + 1) % 4)
@@ -283,6 +274,64 @@ export default function AssessmentPage() {
     }
   }, [height, weight])
 
+  // Auto-calculate WHtR (허리둘레-신장비, id "42") from waist(cm) and height(cm)
+  useEffect(() => {
+    const h = Number.parseFloat(height)
+    const wa = Number.parseFloat(waist)
+    setMeasurementValues((prev) => {
+      const next = { ...prev }
+      if (h > 0 && wa > 0) {
+        next["42"] = (wa / h).toFixed(3)
+      } else {
+        if (Object.prototype.hasOwnProperty.call(next, "42")) {
+          delete next["42"]
+        }
+      }
+      return next
+    })
+  }, [height, waist])
+
+  // Auto-calculate 절대악력(kg, id "52") from 악력_좌(7) and 악력_우(8) using MAX 방식
+  useEffect(() => {
+    const left = Number.parseFloat(measurementValues["7"] || "")
+    const right = Number.parseFloat(measurementValues["8"] || "")
+    const hasLeft = !Number.isNaN(left) && left > 0
+    const hasRight = !Number.isNaN(right) && right > 0
+    const maxVal = hasLeft || hasRight ? Math.max(hasLeft ? left : -Infinity, hasRight ? right : -Infinity) : NaN
+
+    setMeasurementValues((prev) => {
+      const next = { ...prev }
+      if (!Number.isNaN(maxVal) && maxVal > 0) {
+        const formatted = maxVal.toFixed(1)
+        if (next["52"] !== formatted) next["52"] = formatted
+      } else {
+        if (Object.prototype.hasOwnProperty.call(next, "52")) {
+          delete next["52"]
+        }
+      }
+      return next
+    })
+  }, [measurementValues["7"], measurementValues["8"]])
+
+  // Auto-calculate 상대악력(%, id "28") = 절대악력(kg, id "52") / 체중(kg) * 100
+  useEffect(() => {
+    const absGrip = Number.parseFloat(measurementValues["52"] || "")
+    const w = Number.parseFloat(weight)
+    setMeasurementValues((prev) => {
+      const next = { ...prev }
+      if (absGrip > 0 && w > 0) {
+        next["28"] = ((absGrip / w) * 100).toFixed(1)
+      } else {
+        // Do not force remove user-entered 28 if not calculable — only remove if we had set it
+        // Here, we conservatively remove when inputs invalid
+        if (Object.prototype.hasOwnProperty.call(next, "28")) {
+          delete next["28"]
+        }
+      }
+      return next
+    })
+  }, [measurementValues["52"], weight])
+
   useEffect(() => {
     const isBasicInfoComplete = !!(age && gender && height && weight && waist)
     setShowMeasurements(isBasicInfoComplete)
@@ -317,8 +366,86 @@ export default function AssessmentPage() {
     } else {
       if (analyzing) return
     }
-    setProgress(0)
-    setAnalyzing(true)
+    const submitAndStart = async () => {
+      setSubmitting(true)
+      try {
+        const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
+        // req_arr 구성: { measure_key: number, measure_value: number | string }
+        const req_arr: { measure_key: number; measure_value: number | string }[] = Object.entries(measurementValues)
+          .filter(([k, v]) => v !== undefined && v !== null && String(v).trim() !== "")
+          .map(([k, v]) => ({
+            measure_key: Number(k),
+            measure_value: Number(v),
+          }))
+
+        if (height) {
+          const h = Number.parseFloat(height)
+          if (!Number.isNaN(h)) req_arr.push({ measure_key: 1, measure_value: h })
+        }
+        if (weight) {
+          const w = Number.parseFloat(weight)
+          if (!Number.isNaN(w)) req_arr.push({ measure_key: 2, measure_value: w })
+        }
+
+        if (waist) {
+          const wa = Number.parseFloat(waist)
+          if (!Number.isNaN(wa)) req_arr.push({ measure_key: 4, measure_value: wa })
+        }
+        if (bmi) {
+          const b = Number.parseFloat(bmi)
+          if (!Number.isNaN(b)) req_arr.push({ measure_key: 18, measure_value: b })
+        }
+
+        const ageNum = Number.parseInt(age)
+        if (!Number.isNaN(ageNum)) {
+          req_arr.push({ measure_key: 53, measure_value: ageNum })
+        }
+        if (gender) {
+          // send gender as string (e.g. 'M' or 'F')
+          req_arr.push({ measure_key: 54, measure_value: String(gender).trim() })
+        }
+
+        // Start analyzing/loading screen while we await the POST response
+        setProgress(0)
+        setAnalyzing(true)
+
+        const res = await fetch("http://localhost:3001/api/measurement", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ req_arr }),
+        })
+
+        const text = await res.text()
+        let parsed: any = null
+        try {
+          parsed = text ? JSON.parse(text) : null
+        } catch (_) {
+          // non-json response
+        }
+
+        if (!res.ok) {
+          console.error("Measurement POST failed:", res.status, text, parsed)
+          alert(`측정값 전송에 실패했습니다. 서버 응답: ${parsed?.message || text || res.status}`)
+          // stop analyzing since POST failed
+          setAnalyzing(false)
+          setProgress(0)
+          setSubmitting(false)
+          return
+        }
+
+        setSubmitting(false)
+      } catch (err) {
+        console.error("Failed to submit measurements:", err)
+        alert("측정값 전송 중 오류가 발생했습니다. 네트워크를 확인해주세요.")
+        setSubmitting(false)
+        return
+      }
+    }
+
+    submitAndStart()
   }
 
   useEffect(() => {
@@ -457,8 +584,8 @@ export default function AssessmentPage() {
                     onChange={(e) => setGender(e.target.value)}
                   >
                     <option value="">선택하세요</option>
-                    <option value="male">남성</option>
-                    <option value="female">여성</option>
+                    <option value="M">남성</option>
+                    <option value="F">여성</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -549,6 +676,38 @@ export default function AssessmentPage() {
                       const mc = measurementCodes.find((m) => String(m.id) === id || m.id === Number(id))
                       const guideVideoRaw = mc?.guide_video || null
                       const guideVideoId = guideVideoRaw ? extractYouTubeId(guideVideoRaw) : null
+                      const isWhtrField = id === "42"
+                      const isRelGripField = id === "28"
+                      const isAbsGripField = id === "52"
+                      const autoValue = (isWhtrField
+                        ? (() => {
+                            const h = Number.parseFloat(height)
+                            const wa = Number.parseFloat(waist)
+                            if (h > 0 && wa > 0) return (wa / h).toFixed(3)
+                            return ""
+                          })()
+                        : isRelGripField
+                          ? (() => {
+                              const absGrip = Number.parseFloat(measurementValues["52"] || "")
+                              const w = Number.parseFloat(weight)
+                              if (absGrip > 0 && w > 0) return ((absGrip / w) * 100).toFixed(1)
+                              return ""
+                            })()
+                          : isAbsGripField
+                            ? (() => {
+                                const left = Number.parseFloat(measurementValues["7"] || "")
+                                const right = Number.parseFloat(measurementValues["8"] || "")
+                                const hasLeft = !Number.isNaN(left) && left > 0
+                                const hasRight = !Number.isNaN(right) && right > 0
+                                if (hasLeft || hasRight) {
+                                  const maxVal = Math.max(hasLeft ? left : -Infinity, hasRight ? right : -Infinity)
+                                  if (Number.isFinite(maxVal) && maxVal > 0) return maxVal.toFixed(1)
+                                }
+                                return ""
+                              })()
+                            : "")
+                      const isAutoCalculated = ((isWhtrField && autoValue !== "") || (isRelGripField && autoValue !== "") || (isAbsGripField && autoValue !== ""))
+                      const isAutoField = isWhtrField || isRelGripField || isAbsGripField
                     return (
                       <div key={id} className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -592,9 +751,10 @@ export default function AssessmentPage() {
                           id={`measurement-${id}`}
                           type="number"
                           step="0.1"
-                          placeholder="값 입력"
-                          value={measurementValues[id] || ""}
-                          onChange={(e) => updateMeasurementValue(id, e.target.value)}
+                          placeholder={isWhtrField ? "신장/허리둘레로 자동 계산" : (isRelGripField ? "절대악력/체중으로 자동 계산" : (isAbsGripField ? "좌/우 악력으로 자동 계산" : "값 입력"))}
+                          value={isAutoField ? autoValue : (measurementValues[id] || "")}
+                          onChange={(e) => !isAutoField && updateMeasurementValue(id, e.target.value)}
+                          readOnly={isAutoField}
                         />
                       </div>
                     )
@@ -619,7 +779,7 @@ export default function AssessmentPage() {
             <Button
               size="lg"
               onClick={handleAnalyzeStart}
-              disabled={TEMP_SKIP_VALIDATION ? analyzing : (!showMeasurements || analyzing || !!ageWarning || !allRequiredFilled)}
+              disabled={submitting || (TEMP_SKIP_VALIDATION ? analyzing : (!showMeasurements || analyzing || !!ageWarning || !allRequiredFilled))}
             >
             <Activity className="mr-2 h-5 w-5" />
               {analyzing ? "분석 중..." : "AI 분석 시작"}
