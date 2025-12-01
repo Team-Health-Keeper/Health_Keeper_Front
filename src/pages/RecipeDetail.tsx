@@ -185,6 +185,34 @@ export default function RecipeDetailPage() {
 
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  // 유튜브 모달 열릴 때(또는 모달 내에서 다른 영상으로 전환될 때) 시청 이벤트 로깅
+  useEffect(() => {
+    if (!selectedVideo || !selectedVideo.videoId) return
+    const controller = new AbortController()
+    const token = typeof window !== 'undefined' ? sessionStorage.getItem('authToken') : null;
+    (async () => {
+      try {
+        await fetch('http://localhost:3001/api/recipes/watch', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            recipe_id: idParam,
+            video_id: selectedVideo.videoId,
+            title: selectedVideo.title,
+          }),
+          signal: controller.signal,
+        })
+      } catch (_) {
+        // 로깅 실패는 UI에 영향 주지 않음
+      }
+    })()
+    return () => controller.abort()
+  }, [selectedVideo?.videoId])
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
