@@ -55,7 +55,7 @@ export const Hero: FC<HeroProps> = ({ onGetStarted, onGoRecipes }) => {
           </div>
           <div className="relative fade-in-section">
             <div className="relative rounded-3xl bg-gradient-to-br from-blue-100 to-blue-50 p-8 transition-transform duration-700 ease-out">
-              <img src="/3d-illustration-of-person-exercising-with-fitness-.jpg" alt="체력 측정 일러스트" loading="lazy" className="h-auto w-full" />
+              <img src="/3d-illustration-of-person-exercising-with-fitness.png" alt="체력 측정 일러스트" loading="lazy" className="h-auto w-full" />
             </div>
             <div
               className="absolute -left-4 top-1/4 rounded-2xl bg-white p-4 shadow-xl hidden sm:block cursor-pointer transition-transform hover:scale-[1.03]"
