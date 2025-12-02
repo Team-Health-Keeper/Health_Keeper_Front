@@ -7,6 +7,7 @@ import { Activity, Clock, Play, TrendingUp } from "lucide-react"
 import { Link, useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { YoutubeModal } from "@/components/youtube-modal"
+import { getApiBase, apiFetch } from "@/lib/utils"
 import { RecipeMetaHeader } from "@/components/recipe/RecipeMetaHeader"
 import { ExerciseVideoCard } from "@/components/recipe/ExerciseVideoCard"
 import { ExercisePhaseSection } from "@/components/recipe/ExercisePhaseSection"
@@ -102,15 +103,13 @@ export default function RecipeDetailPage() {
       setError(null)
       try {
         const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
-        const res = await fetch(`http://localhost:3001/api/recipes/${idParam}`, {
+        const data: RecipeDetailResponse = await apiFetch<RecipeDetailResponse>(`/api/recipes/${idParam}`, {
           headers: {
             "Accept": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           signal: controller.signal,
         })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data: RecipeDetailResponse = await res.json()
         if (ignore) return
         if (!data.success) throw new Error("API returned success=false")
         setMeta({
@@ -143,12 +142,14 @@ export default function RecipeDetailPage() {
     }
   }, [idParam])
 
-  const openVideo = (ex: RecipeExercise) => {
+  const openVideo = (ex: RecipeExercise, preferredIndex?: number) => {
     const vid = extractYouTubeId(ex.video_url)
-    if (!vid) return
-    const idx = playlist.findIndex((p) => p.videoId === vid)
-    if (idx !== -1) setCurrentIndex(idx)
-    setSelectedVideo({ title: ex.exercise_name, videoId: vid })
+    if (!vid && typeof preferredIndex !== 'number') return
+    let idx = typeof preferredIndex === 'number' ? preferredIndex : playlist.findIndex((p) => p.videoId === vid)
+    if (idx < 0) idx = 0
+    setCurrentIndex(idx)
+    const item = playlist[idx]
+    setSelectedVideo({ title: ex.exercise_name, videoId: item?.videoId || vid })
   }
 
   // 섹션 분류 (phase 값이 없다면 전부 main 으로 간주)
@@ -195,7 +196,7 @@ export default function RecipeDetailPage() {
     const token = typeof window !== 'undefined' ? sessionStorage.getItem('authToken') : null;
     (async () => {
       try {
-        await fetch('http://localhost:3001/api/recipes/watch', {
+        await apiFetch(`/api/recipes/watch`, {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
@@ -269,7 +270,7 @@ export default function RecipeDetailPage() {
                           bodyPart: ex.body_part || undefined,
                           targetAge: ex.target_audience || undefined,
                         }}
-                        onOpen={() => openVideo(ex)}
+                        onOpen={() => openVideo(ex, idx)}
                       />
                     )
                   })}
@@ -285,6 +286,7 @@ export default function RecipeDetailPage() {
                   const vidId = extractYouTubeId(ex.video_url)
                   const thumb = ex.image_url || (vidId ? `https://img.youtube.com/vi/${vidId}/mqdefault.jpg` : undefined)
                   const durationText = formatVideoDuration(ex.video_duration)
+                  const offset = hasPhaseInfo ? warmupExercises.length : 0
                   return (
                     <ExerciseVideoCard
                       key={`main-${idx}`}
@@ -299,7 +301,7 @@ export default function RecipeDetailPage() {
                         bodyPart: ex.body_part || undefined,
                         targetAge: ex.target_audience || undefined,
                       }}
-                      onOpen={() => openVideo(ex)}
+                      onOpen={() => openVideo(ex, offset + idx)}
                     />
                   )
                 })}
@@ -316,6 +318,7 @@ export default function RecipeDetailPage() {
                     const vidId = extractYouTubeId(ex.video_url)
                     const thumb = ex.image_url || (vidId ? `https://img.youtube.com/vi/${vidId}/mqdefault.jpg` : undefined)
                     const durationText = formatVideoDuration(ex.video_duration)
+                    const offset = warmupExercises.length + mainExercises.length
                     return (
                       <ExerciseVideoCard
                         key={`cooldown-${idx}`}
@@ -330,7 +333,7 @@ export default function RecipeDetailPage() {
                           bodyPart: ex.body_part || undefined,
                           targetAge: ex.target_audience || undefined,
                         }}
-                        onOpen={() => openVideo(ex)}
+                        onOpen={() => openVideo(ex, offset + idx)}
                       />
                     )
                   })}

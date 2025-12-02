@@ -16,7 +16,8 @@ import {
 import type { MyPageData } from '@/components/mypage';
 
 // API 기본 URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { getApiBase, apiFetch } from "@/lib/utils"
+const API_BASE_URL = getApiBase();
 
 export default function MyPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -54,24 +55,22 @@ export default function MyPage() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/mypage`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || '데이터를 불러오는데 실패했습니다.');
+      let result: any
+      try {
+        result = await apiFetch<any>(`/api/mypage`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      } catch (e: any) {
+        throw new Error(e?.body?.message || e.message || '데이터를 불러오는데 실패했습니다.')
       }
-
-      if (result.success) {
-        setMyPageData(result.data);
+      if (result?.success) {
+        setMyPageData(result.data)
       } else {
-        throw new Error(result.message || '데이터를 불러오는데 실패했습니다.');
+        throw new Error(result?.message || '데이터를 불러오는데 실패했습니다.')
       }
     } catch (err) {
       setError(

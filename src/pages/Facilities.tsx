@@ -11,6 +11,7 @@ declare global {
 }
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { getApiBase, apiFetch } from "@/lib/utils"
 import { HeroSection } from "@/components/common/HeroSection"
 import { FiltersBar as FacilitiesFiltersBar } from "@/components/facilities/FiltersBar"
 import { MapPane } from "@/components/facilities/MapPane"
@@ -226,20 +227,46 @@ export default function FacilitiesPage() {
   }, [facilities, activeCategory])
 
   const handleLocateMe = () => {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation) {
+      setError("이 브라우저에서는 위치 기능을 사용할 수 없어요. 임시로 서울역 기준으로 보여드릴게요.")
+      // 임시 위치(서울역)로 설정
+      setUserLat(37.554722)
+      setUserLng(126.970833)
+      return
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLat(pos.coords.latitude)
         setUserLng(pos.coords.longitude)
+        setError(null)
       },
-      () => {
-        setError("위치 권한을 허용하면 주변 시설을 볼 수 있어요")
-        console.warn("Geolocation not permitted")
+      (err) => {
+        // Provide actionable guidance, especially for Safari
+        let msg = "위치 권한을 허용하면 주변 시설을 볼 수 있어요"
+        if (err && typeof err.code === 'number') {
+          switch (err.code) {
+            case 1:
+              msg = "권한이 거부되었어요. 설정에서 이 사이트의 위치 권한을 '허용' 또는 '묻기'로 변경해주세요. 임시로 서울역 기준으로 보여드릴게요."
+              break
+            case 2:
+              msg = "위치를 가져오지 못했어요. 네트워크 상태를 확인하고 다시 시도해주세요. 임시로 서울역 기준으로 보여드릴게요."
+              break
+            case 3:
+              msg = "위치 요청이 시간 초과됐어요. 주변 환경이 실내면 정확도가 낮을 수 있어요. 임시로 서울역 기준으로 보여드릴게요."
+              break
+          }
+        }
+        setError(msg)
+        // 임시 위치(서울역)로 설정
+        setUserLat(37.554722)
+        setUserLng(126.970833)
+        console.warn("Geolocation error:", err)
       },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
   }
 
-  // 페이지 진입 시 즉시 내 위치 요청
+  // 페이지 진입 시 즉시 내 위치 요청 (요청사항: 자동 호출)
   useEffect(() => {
     handleLocateMe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -302,11 +329,13 @@ export default function FacilitiesPage() {
       params.append('page', String(_targetPage))
       if (activeCategory && activeCategory !== '전체') params.append('facilityType', activeCategory)
 
-      const url = `http://localhost:3001/api/sports-facilities/nearby${params.toString() ? `?${params.toString()}` : ''}`
-      const res = await fetch(url)
-      if (!res.ok) throw new Error('서버 응답이 올바르지 않습니다.')
-      const json: NearbyApiResponse = await res.json()
-      if (!json.success) throw new Error(json.message || '요청 실패')
+      let json: NearbyApiResponse
+      try {
+        json = await apiFetch<NearbyApiResponse>(`/api/sports-facilities/nearby${params.toString() ? `?${params.toString()}` : ''}`)
+        if (!json.success) throw new Error(json.message || '요청 실패')
+      } catch (e: any) {
+        throw new Error(e?.body?.message || e.message || '요청 실패')
+      }
 
       const normalized: FacilityApiItem[] = (json.data || []).map((item, idx) => {
         const latRaw = item.FCLTY_LA

@@ -11,6 +11,7 @@ import { RecipePagination } from "@/components/recipe/RecipePagination"
 import { ApiRecipe } from "@/components/recipe/types"
 import { LoadingState } from "@/components/common/LoadingState"
 import { EmptyState } from "@/components/common/EmptyState"
+import { getApiBase, apiFetch } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HeroSection } from "@/components/common/HeroSection"
@@ -52,18 +53,12 @@ export default function RecipesPage() {
         params.set("for_me", forMe)
         if (search.trim()) params.set("recipe_title", search.trim())
         const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
-        const res = await fetch(`http://localhost:3001/api/recipes?${params.toString()}`,
-          {
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            signal: controller.signal,
-          }
-        )
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`)
-        }
-        const data = await res.json()
+        const data = await apiFetch<any>(`/api/recipes?${params.toString()}`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          signal: controller.signal,
+        })
         if (ignore) return
         const list: ApiRecipe[] = Array.isArray(data?.data) ? data.data : []
         setApiRecipes(list)

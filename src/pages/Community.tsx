@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HeroSection } from "@/components/common/HeroSection"
+import { getApiBase, apiFetch } from "@/lib/utils"
 import { FiltersBar } from "@/components/community/FiltersBar"
 import { StatsSection } from "@/components/community/StatsSection"
 import { ClubsGrid } from "@/components/community/ClubsGrid"
@@ -147,12 +148,12 @@ export default function ClubsPage() {
       if (selectedRegion !== "모두") {
         params.set("region", selectedRegion)
       }
-      const url = `http://localhost:3001/api/clubs?${params.toString()}`
-      const res = await fetch(url)
-      const json = await res.json().catch(() => ({ success: false, message: `서버 응답 파싱 실패 (${res.status})` }))
-      if (!res.ok || json?.success === false) {
-        const msg = json?.message || `서버 오류 (${res.status})`
-        throw new Error(msg)
+      let json: any
+      try {
+        json = await apiFetch<any>(`/api/clubs?${params.toString()}`)
+        if (json?.success === false) throw new Error(json?.message || '서버 오류')
+      } catch (e: any) {
+        throw new Error(e?.body?.message || e.message || '서버 오류')
       }
       // UX를 위한 인위적 지연: 초기 로드/검색 리셋 시에는 지연 없음, 무한 스크롤 추가 로드 때만 지연
       if (!reset) {
@@ -198,12 +199,13 @@ export default function ClubsPage() {
     const loadStats = async () => {
       try {
         setStatsError(null)
-        const res = await fetch("http://localhost:3001/api/clubs/stats")
-        const json = await res.json().catch(() => ({ success: false, message: `서버 응답 파싱 실패 (${res.status})` }))
-        if (!res.ok || json?.success === false) {
-          throw new Error(json?.message || `서버 오류 (${res.status})`)
+        try {
+          const json = await apiFetch<any>(`/api/clubs/stats`)
+          if (json?.success === false) throw new Error(json?.message || '서버 오류')
+          setStats(json.data || null)
+        } catch (e: any) {
+          throw new Error(e?.body?.message || e.message || '서버 오류')
         }
-        setStats(json.data || null)
       } catch (e: any) {
         setStatsError(e.message || "통계 정보를 불러오지 못했습니다")
       }

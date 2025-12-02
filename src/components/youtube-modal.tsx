@@ -85,7 +85,8 @@ export function YouTubeModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         ref={contentRef}
-        className="!max-w-none p-0 overflow-hidden [&_[data-slot='dialog-close']]:hidden"
+        className="!max-w-none p-0 overflow-hidden"
+        showCloseButton={false}
         style={{ width: contentWidth ?? "min(90vw, calc(90vh * (16/9)))", maxWidth: 1200 }}
       >
         <button
@@ -102,9 +103,27 @@ export function YouTubeModal({
             <DialogHeader className="pt-6 pl-6 pr-6 bg-background z-10">
               <DialogTitle>{title}</DialogTitle>
               {playlist.length > 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {currentIndex + 1} / {playlist.length}
-                </p>
+                <div className="mt-1 flex items-center justify-center gap-2">
+                  <Button
+                    onClick={handlePrevious}
+                    disabled={!hasPrevious}
+                    className="h-8 w-8 p-0 rounded-full bg-white/90 text-gray-900 shadow ring-1 ring-black/10 hover:bg-white disabled:opacity-40"
+                    aria-label="이전 영상"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <p className="text-sm text-muted-foreground min-w-[56px] text-center">
+                    {currentIndex + 1} / {playlist.length}
+                  </p>
+                  <Button
+                    onClick={handleNext}
+                    disabled={!hasNext}
+                    className="h-8 w-8 p-0 rounded-full bg-white/90 text-gray-900 shadow ring-1 ring-black/10 hover:bg-white disabled:opacity-40"
+                    aria-label="다음 영상"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </DialogHeader>
           </div>
@@ -113,25 +132,7 @@ export function YouTubeModal({
         <div className="relative flex items-center justify-center p-0">
           {/* 비디오 컨테이너: 16:9 비율 유지 */}
           <div className="relative aspect-video w-full">
-              {/* 버튼을 비디오 컨테이너 안에서 절대 배치 → 비디오 가장자리 기준 */}
-              {hasPrevious && (
-                <Button
-                  onClick={handlePrevious}
-                  className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-40 h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-white/95 shadow-xl ring-1 ring-black/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary p-0 cursor-pointer"
-                  aria-label="이전 영상"
-                >
-                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-gray-900" />
-                </Button>
-              )}
-              {hasNext && (
-                <Button
-                  onClick={handleNext}
-                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-40 h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-white/95 shadow-xl ring-1 ring-black/10 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary p-0 cursor-pointer"
-                  aria-label="다음 영상"
-                >
-                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-gray-900" />
-                </Button>
-              )}
+              {/* 헤더에 내비게이션을 배치했으므로 비디오 오버레이 버튼은 제거 */}
 
               <iframe
                 src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}

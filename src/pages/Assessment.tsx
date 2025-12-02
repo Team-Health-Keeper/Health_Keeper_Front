@@ -16,6 +16,7 @@ import { HeroSection } from "@/components/common/HeroSection"
 import { BasicInfoForm } from "@/components/assessment/BasicInfoForm"
 import { MeasurementGrid } from "@/components/assessment/MeasurementGrid"
 import { AnalyzeOverlay } from "@/components/assessment/AnalyzeOverlay"
+import { getApiBase, apiFetch } from "@/lib/utils"
 
 interface MeasurementCode {
   id: number
@@ -213,19 +214,13 @@ export default function AssessmentPage() {
     if (fetchOnceRef.current) return
     fetchOnceRef.current = true
     const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
-    fetch("http://localhost:3001/api/measurement/measurement-codes", {
+    apiFetch<{ success?: boolean; data?: MeasurementCode[] } | MeasurementCode[]>(`/api/measurement/measurement-codes`, {
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`)
-        }
-        return res.json()
-      })
-      .then((payload: { success?: boolean; data?: MeasurementCode[] } | MeasurementCode[]) => {
-        const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data! : []
+      .then((payload) => {
+        const list = Array.isArray(payload) ? payload : Array.isArray((payload as any)?.data) ? (payload as any).data! : []
         setMeasurementCodes(list)
       })
       .catch((err) => {
@@ -446,27 +441,19 @@ export default function AssessmentPage() {
         setProgress(0)
         setAnalyzing(true)
 
-        const res = await fetch("http://localhost:3001/api/measurement", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ req_arr }),
-        })
-
-        const text = await res.text()
         let parsed: any = null
         try {
-          parsed = text ? JSON.parse(text) : null
-        } catch (_) {
-          // non-json response
-        }
-
-        if (!res.ok) {
-          console.error("Measurement POST failed:", res.status, text, parsed)
-          alert(`측정값 전송에 실패했습니다. 서버 응답: ${parsed?.message || text || res.status}`)
-          // stop analyzing since POST failed
+          parsed = await apiFetch<any>(`/api/measurement`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ req_arr }),
+          })
+        } catch (e: any) {
+          console.error("Measurement POST failed:", e)
+          alert(`측정값 전송에 실패했습니다. 서버 응답: ${e?.body?.message || e.message || e.status || '오류'}`)
           setAnalyzing(false)
           setProgress(0)
           setSubmitting(false)
@@ -477,8 +464,6 @@ export default function AssessmentPage() {
         try {
           if (parsed) {
             sessionStorage.setItem("analysisResult", JSON.stringify(parsed))
-          } else if (text) {
-            sessionStorage.setItem("analysisResult", text)
           }
         } catch (e) {
           console.warn("Failed to persist analysisResult to sessionStorage", e)
