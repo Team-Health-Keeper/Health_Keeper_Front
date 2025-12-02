@@ -21,6 +21,7 @@ export interface MeasurementGridProps {
   onOpenTextGuide: (id: string) => void
   onOpenVideoGuide: (label: string, videoId: string) => void
   extractYouTubeId: (url: string) => string
+  hasTextGuide?: (id: string) => boolean
 }
 
 export function MeasurementGrid({
@@ -36,6 +37,7 @@ export function MeasurementGrid({
   onOpenTextGuide,
   onOpenVideoGuide,
   extractYouTubeId,
+  hasTextGuide,
 }: MeasurementGridProps) {
   return (
     <Card className="mt-6">
@@ -63,9 +65,13 @@ export function MeasurementGrid({
                   <div className="flex items-center justify-between">
                     <Label htmlFor={`measurement-${id}`}>{label} {isRequired && <span className="text-destructive">*필수</span>}</Label>
                     <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={() => onOpenTextGuide(id)} title="측정 글 가이드">
-                        <BookOpen className="h-4 w-4" />
-                      </Button>
+                      {(!hasTextGuide || hasTextGuide(id)) ? (
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={() => onOpenTextGuide(id)} title="측정 글 가이드">
+                          <BookOpen className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <span className="h-8 w-8 inline-block" aria-hidden="true" />
+                      )}
                       {guideVideoId && (
                         <Button type="button" variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={() => onOpenVideoGuide(label.replace(/\s*\*필수\s*$/, ""), guideVideoId!)} title="측정 영상 보기">
                           <Video className="h-4 w-4" />

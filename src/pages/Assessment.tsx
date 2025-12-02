@@ -473,6 +473,17 @@ export default function AssessmentPage() {
           return
         }
 
+        // 성공 시 결과 데이터를 세션 스토리지에 저장하여 Results 페이지에서 활용
+        try {
+          if (parsed) {
+            sessionStorage.setItem("analysisResult", JSON.stringify(parsed))
+          } else if (text) {
+            sessionStorage.setItem("analysisResult", text)
+          }
+        } catch (e) {
+          console.warn("Failed to persist analysisResult to sessionStorage", e)
+        }
+
         setSubmitting(false)
       } catch (err) {
         console.error("Failed to submit measurements:", err)
@@ -593,6 +604,7 @@ export default function AssessmentPage() {
               onOpenTextGuide={(id) => setGuideKey(guideKeyForMeasurement(id))}
               onOpenVideoGuide={(label, vid) => { setSelectedTitle(label); setSelectedVideo(vid) }}
               extractYouTubeId={extractYouTubeId}
+              hasTextGuide={(id) => !!hasGuideForMeasurement(id)}
             />
           )}
 

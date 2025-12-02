@@ -24,6 +24,7 @@ interface ClubCardProps {
 }
 
 export const ClubCard: FC<ClubCardProps> = memo(({ club, formatFoundedDate, formatMemberCount }) => {
+  const locationName = club.sidoName === '세종특별자치시' ? club.sidoName : club.sigunguName;
   const parseFoundedDate = (dateStr: string) => {
     if (!dateStr) return null;
     // Try native parse first
@@ -72,7 +73,7 @@ export const ClubCard: FC<ClubCardProps> = memo(({ club, formatFoundedDate, form
       <CardContent className="px-6 space-y-3 pb-6">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <MapPin className="h-4 w-4 text-gray-400" aria-hidden="true" />
-          {club.sigunguName}
+          {locationName}
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Calendar className="h-4 w-4 text-gray-400" aria-hidden="true" />
@@ -93,7 +94,7 @@ export const ClubCard: FC<ClubCardProps> = memo(({ club, formatFoundedDate, form
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-gray-400" aria-hidden="true" />
-            지역: {club.sigunguName}
+            지역: {locationName}
           </div>
         </div>
       </CardContent>

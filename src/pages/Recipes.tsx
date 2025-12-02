@@ -1,12 +1,16 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Activity, Clock, Search, TrendingUp } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Activity } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
+import { RecipeFilterBar } from "@/components/recipe/RecipeFilterBar"
+import { RecipeCard } from "@/components/recipe/RecipeCard"
+import { RecipePagination } from "@/components/recipe/RecipePagination"
+import { ApiRecipe } from "@/components/recipe/types"
+import { LoadingState } from "@/components/common/LoadingState"
+import { EmptyState } from "@/components/common/EmptyState"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HeroSection } from "@/components/common/HeroSection"
@@ -23,16 +27,7 @@ export default function RecipesPage() {
   const [forMe, setForMe] = useState<'Y' | 'N'>('N') // 전체 보기: N, 내 레시피: Y
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [apiRecipes, setApiRecipes] = useState<Array<{
-    id: number
-    recipe_title: string
-    recipe_intro: string
-    difficulty?: string
-    duration_min?: number
-    card_count?: number
-    slug?: string
-    category_name?: string
-  }>>([])
+  const [apiRecipes, setApiRecipes] = useState<ApiRecipe[]>([])
   const [totalPages, setTotalPages] = useState(1)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [count, setCount] = useState(0)
@@ -70,7 +65,7 @@ export default function RecipesPage() {
         }
         const data = await res.json()
         if (ignore) return
-        const list = Array.isArray(data?.data) ? data.data : []
+        const list: ApiRecipe[] = Array.isArray(data?.data) ? data.data : []
         setApiRecipes(list)
         setCount(Number(data?.count ?? list.length))
         setTotalPages(Number(data?.totalPages ?? 1))
@@ -111,154 +106,40 @@ export default function RecipesPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-12">
 
-        {/* Search and Filter */}
-        <div className="mb-10 space-y-6">
-          <div className="relative max-w-xl mx-auto">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="운동 레시피 검색..."
-              className="pl-11 h-12 text-base"
-              value={search}
-              onChange={(e) => {
-                setPage(1)
-                setSearch(e.target.value)
-              }}
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2 justify-center">
-            {categories.map((category) => (
-              <Badge
-                key={category}
-                variant={category === selectedCategory ? "default" : "outline"}
-                className={`cursor-pointer px-4 py-2 text-sm transition-all ${
-                  category === selectedCategory
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "hover:bg-primary/10 hover:text-primary hover:border-primary/50"
-                }`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </Badge>
-            ))}
-          </div>
-
-          {/* 카테고리 아래 토글 스위치 (우측 정렬) */}
-          <div className="flex items-center gap-3 justify-end">
-            <span className={forMe === 'N' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-              전체 보기
-            </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={forMe === 'Y'}
-              aria-label="내 레시피 보기 토글"
-              onClick={() => {
-                setPage(1)
-                setForMe((prev) => (prev === 'Y' ? 'N' : 'Y'))
-              }}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40 ${
-                forMe === 'Y' ? 'bg-primary' : 'bg-muted'
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  forMe === 'Y' ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-            <span className={forMe === 'Y' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-              내 레시피 보기
-            </span>
-          </div>
-        </div>
+        <RecipeFilterBar
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryChange={(c) => { setPage(1); setSelectedCategory(c) }}
+          search={search}
+          onSearchChange={(v) => { setPage(1); setSearch(v) }}
+          forMe={forMe}
+          onToggleForMe={() => { setPage(1); setForMe(prev => prev === 'Y' ? 'N' : 'Y') }}
+        />
 
         {/* Results Grid */}
-        {loading && (
-          <div className="py-10 text-center text-muted-foreground">불러오는 중...</div>
-        )}
-        {!loading && error && (
-          <div className="py-10 text-center text-destructive">{error}</div>
-        )}
+        {loading && <LoadingState className="py-10" />}
+        {!loading && error && <EmptyState message={error} className="py-10" />}
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredApiRecipes.map((recipe: any) => {
-            // 항상 id 기반 상세 페이지로 이동
-            const linkTo = `/recipes/${recipe.id}`
-            const duration = recipe.duration_min ?? recipe.durationMin ?? recipe.duration ?? undefined
-            const exerciseCount = recipe.card_count ?? recipe.exerciseCount
-            const categoryName = recipe.category_name ?? recipe.categoryName ?? ""
-            return (
-              <Link key={recipe.id} to={linkTo}>
-                <Card className="group h-full cursor-pointer overflow-hidden border-border transition-all hover:border-primary/50 hover:shadow-xl hover:-translate-y-1">
-                  <CardContent className="p-6">
-                    <div className="mb-4 flex items-start justify-between">
-                      <Badge className="bg-primary/10 text-primary border-primary/20">{categoryName || '운동'}</Badge>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground" />
-                    </div>
-
-                    <h3 className="mb-3 text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                      {recipe.recipe_title}
-                    </h3>
-
-                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{recipe.recipe_intro}</p>
-
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                      {duration !== undefined && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{duration}분</span>
-                        </div>
-                      )}
-                      {exerciseCount !== undefined && (
-                        <div className="flex items-center gap-1">
-                          <Activity className="h-4 w-4" />
-                          <span>{exerciseCount}개 운동</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <TrendingUp className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-foreground">{recipe.difficulty}</span>
-                    </div>
-
-                  </CardContent>
-                </Card>
-              </Link>
-            )
-          })}
+          {filteredApiRecipes.map(recipe => (
+            <RecipeCard key={recipe.id} recipe={recipe} />
+          ))}
         </div>
 
         {/* Pagination (only when API returned results) */}
-        {apiRecipes.length > 0 && (
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <Button
-              variant="outline"
-              disabled={page <= 1 || loading}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              이전
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {page} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              disabled={!hasNextPage || loading}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              다음
-            </Button>
-          </div>
-        )}
+        <RecipePagination
+          show={apiRecipes.length > 0}
+          page={page}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          loading={loading}
+          onPrev={() => setPage(p => Math.max(1, p - 1))}
+          onNext={() => setPage(p => p + 1)}
+        />
 
         {/* Empty state when no results */}
         {!loading && !error && filteredApiRecipes.length === 0 && (
-          <div className="py-12 text-center text-muted-foreground">
-            표시할 레시피가 없습니다. 검색어나 카테고리를 변경해 보세요.
-          </div>
+          <EmptyState message="표시할 레시피가 없습니다. 검색어나 카테고리를 변경해 보세요." className="py-12" />
         )}
 
         {/* CTA Section */}
