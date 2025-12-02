@@ -1,0 +1,113 @@
+import { Link } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Clock, Dumbbell, Play, Sparkles } from 'lucide-react';
+import { exercises } from '@/components/exercise';
+import { SiteHeader } from '@/components/site-header';
+import { SiteFooter } from '@/components/site-footer';
+import { HeroSection } from '@/components/common/HeroSection';
+
+export default function Exercise() {
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case '초급':
+        return 'bg-green-600 text-white border-green-700';
+      case '중급':
+        return 'bg-yellow-500 text-white border-yellow-600';
+      case '고급':
+        return 'bg-red-600 text-white border-red-700';
+      default:
+        return 'bg-gray-600 text-white border-gray-700';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white">
+      <SiteHeader />
+
+      <HeroSection
+        badgeIcon={Sparkles}
+        badgeText="AI 트레이너"
+        title="AI가 실시간으로"
+        highlight="자세를 분석해드립니다"
+        description="영상을 보며 운동을 따라하면 AI가 자세 정확도를 실시간으로 분석해드립니다"
+        centered={false}
+        className="py-16"
+      />
+
+      <div className="container mx-auto max-w-6xl px-6 py-8">
+        {/* 운동 목록 */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {exercises.map((exercise) => (
+            <Card
+              key={exercise.id}
+              className="group overflow-hidden hover:border-primary/50 transition-all hover:shadow-lg rounded-xl !py-0 !gap-0"
+            >
+              {/* 썸네일 영역 */}
+              <div className="relative aspect-video bg-muted overflow-hidden rounded-t-xl">
+                {exercise.thumbnailUrl ? (
+                  <img
+                    src={exercise.thumbnailUrl}
+                    alt={exercise.name}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-primary/20 to-accent/20">
+                    <Dumbbell className="h-12 w-12 text-primary/50" />
+                  </div>
+                )}
+                <div className="absolute top-3 left-3">
+                  <Badge className={getDifficultyColor(exercise.difficulty)}>
+                    {exercise.difficulty}
+                  </Badge>
+                </div>
+                <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  <Clock className="h-3 w-3" />
+                  {exercise.duration}초
+                </div>
+              </div>
+
+              <CardContent className="p-4">
+                <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">
+                  {exercise.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  {exercise.description}
+                </p>
+
+                {/* 타겟 근육 */}
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {exercise.targetMuscles.slice(0, 3).map((muscle) => (
+                    <span
+                      key={muscle}
+                      className="text-xs bg-muted px-2 py-0.5 rounded"
+                    >
+                      {muscle}
+                    </span>
+                  ))}
+                </div>
+
+                <Button className="w-full" asChild>
+                  <Link to={`/exercise/${exercise.id}`}>
+                    <Play className="h-4 w-4 mr-2" />
+                    시작하기
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* 추가 안내 */}
+        <div className="mt-8 text-center text-sm text-muted-foreground">
+          <p>
+            💡 더 정확한 자세 분석을 위해 전신이 카메라에 잘 보이도록 해주세요.
+          </p>
+        </div>
+      </div>
+
+      <SiteFooter />
+    </div>
+  );
+}

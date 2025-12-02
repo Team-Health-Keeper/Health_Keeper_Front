@@ -63,7 +63,7 @@ export function StatsOverviewCard({
                   {grassStats.attendance}
                 </div>
                 <div className="text-[10px] sm:text-xs text-muted-foreground">
-                  출석
+                  출석 (일)
                 </div>
               </button>
               {/* 출석 날짜 팝업 */}
@@ -117,7 +117,7 @@ export function StatsOverviewCard({
                   {grassStats.videoWatch}
                 </div>
                 <div className="text-[10px] sm:text-xs text-muted-foreground">
-                  영상시청
+                  영상시청 (일)
                 </div>
               </button>
               {/* 영상시청 날짜 팝업 */}
@@ -170,15 +170,17 @@ export function StatsOverviewCard({
                 {measurementHistory?.length || 0}
               </div>
               <div className="text-[10px] sm:text-xs text-muted-foreground">
-                체력측정
+                체력측정 (회)
               </div>
             </button>
           </div>
           <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-muted-foreground">이번 주 영상 시청</span>
+              <span className="text-muted-foreground">
+                이번 주 영상 시청 일수
+              </span>
               <span className="font-semibold text-primary">
-                {weeklyVideoWatch || 0}회
+                {weeklyVideoWatch || 0}일
               </span>
             </div>
           </div>
