@@ -26,6 +26,7 @@ interface PoseDetectorProps {
   onAccuracyChange?: (accuracy: number, feedback: string[]) => void;
   onLandmarksDetected?: (landmarks: Landmark[]) => void;
   isActive?: boolean;
+  hideAccuracy?: boolean; // 정확도 배지 숨김 (모바일 PIP용)
 }
 
 export function PoseDetector({
@@ -33,6 +34,7 @@ export function PoseDetector({
   onAccuracyChange,
   onLandmarksDetected,
   isActive = true,
+  hideAccuracy = false,
 }: PoseDetectorProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -137,12 +139,14 @@ export function PoseDetector({
     // 이미 초기화된 경우 재초기화 방지
     if (poseRef.current && cameraRef.current) return;
 
+    let isMounted = true;
+
     const initializePose = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // MediaPipe Pose 초기화
+        // MediaPipe Pose 초기화 - CDN에서 파일 로드
         const pose = new Pose({
           locateFile: (file) =>
             `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
@@ -158,16 +162,23 @@ export function PoseDetector({
 
         // ref를 통해 최신 콜백 호출
         pose.onResults((results) => {
-          onResultsRef.current(results);
+          if (isMounted) {
+            onResultsRef.current(results);
+          }
         });
+
         poseRef.current = pose;
 
         // 웹캠 초기화
         if (videoRef.current) {
           const camera = new Camera(videoRef.current, {
             onFrame: async () => {
-              if (poseRef.current && videoRef.current) {
-                await poseRef.current.send({ image: videoRef.current });
+              if (poseRef.current && videoRef.current && isMounted) {
+                try {
+                  await poseRef.current.send({ image: videoRef.current });
+                } catch (e) {
+                  // 프레임 전송 에러 무시
+                }
               }
             },
             width: 640,
@@ -178,21 +189,30 @@ export function PoseDetector({
           await camera.start();
         }
 
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error('Pose 초기화 오류:', err);
-        setError('카메라를 시작할 수 없습니다. 카메라 권한을 확인해주세요.');
-        setIsLoading(false);
+        if (isMounted) {
+          setError('카메라를 시작할 수 없습니다. 카메라 권한을 확인해주세요.');
+          setIsLoading(false);
+        }
       }
     };
 
     initializePose();
 
     return () => {
-      cameraRef.current?.stop();
-      cameraRef.current = null;
-      poseRef.current?.close();
-      poseRef.current = null;
+      isMounted = false;
+      if (cameraRef.current) {
+        cameraRef.current.stop();
+        cameraRef.current = null;
+      }
+      if (poseRef.current) {
+        poseRef.current.close();
+        poseRef.current = null;
+      }
     };
   }, [isActive]);
 
@@ -226,7 +246,7 @@ export function PoseDetector({
   return (
     <div className="relative w-full h-full">
       {/* 숨겨진 비디오 (MediaPipe용) */}
-      <video ref={videoRef} className="hidden" playsInline muted />
+      <video ref={videoRef} className="hidden" playsInline muted autoPlay />
 
       {/* 캔버스 (스켈레톤 오버레이) */}
       <canvas
@@ -245,7 +265,7 @@ export function PoseDetector({
       )}
 
       {/* 정확도 배지 */}
-      {!isLoading && (
+      {!isLoading && !hideAccuracy && (
         <div
           className="absolute top-3 right-3 px-3 py-1 rounded-full text-white font-bold text-sm"
           style={{ backgroundColor: getAccuracyColor(currentAccuracy) }}

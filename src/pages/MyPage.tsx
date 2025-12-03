@@ -16,7 +16,7 @@ import {
 import type { MyPageData } from '@/components/mypage';
 
 // API 기본 URL
-import { getApiBase, apiFetch } from "@/lib/utils"
+import { getApiBase, apiFetch } from '@/lib/utils';
 const API_BASE_URL = getApiBase();
 
 export default function MyPage() {
@@ -55,7 +55,7 @@ export default function MyPage() {
         return;
       }
 
-      let result: any
+      let result: any;
       try {
         result = await apiFetch<any>(`/api/mypage`, {
           method: 'GET',
@@ -63,14 +63,16 @@ export default function MyPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-        })
+        });
       } catch (e: any) {
-        throw new Error(e?.body?.message || e.message || '데이터를 불러오는데 실패했습니다.')
+        throw new Error(
+          e?.body?.message || e.message || '데이터를 불러오는데 실패했습니다.'
+        );
       }
       if (result?.success) {
-        setMyPageData(result.data)
+        setMyPageData(result.data);
       } else {
-        throw new Error(result?.message || '데이터를 불러오는데 실패했습니다.')
+        throw new Error(result?.message || '데이터를 불러오는데 실패했습니다.');
       }
     } catch (err) {
       setError(
@@ -166,7 +168,10 @@ export default function MyPage() {
             />
 
             {/* Badges Card */}
-            <BadgesCard badges={badges} />
+            <BadgesCard
+              badges={badges}
+              firstPlaceCount={myPageData?.firstPlaceCount ?? 0}
+            />
 
             {/* Stats Overview */}
             <StatsOverviewCard

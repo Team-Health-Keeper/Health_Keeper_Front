@@ -110,7 +110,7 @@ const KEY_ANGLES_CONFIG = [
       POSE_LANDMARKS.LEFT_ELBOW,
       POSE_LANDMARKS.LEFT_WRIST,
     ],
-    tolerance: 35, // [수정] 팔꿈치 허용 오차 (기본값: 35도)
+    tolerance: 26, // [수정] 팔꿈치 허용 오차 (기본값: 35도)
   },
   {
     name: '왼쪽 어깨',
@@ -119,7 +119,7 @@ const KEY_ANGLES_CONFIG = [
       POSE_LANDMARKS.LEFT_SHOULDER,
       POSE_LANDMARKS.LEFT_HIP,
     ],
-    tolerance: 35, // [수정] 어깨 허용 오차 (기본값: 35도)
+    tolerance: 26, // [수정] 어깨 허용 오차 (기본값: 35도)
   },
   // 오른팔
   {
@@ -129,7 +129,7 @@ const KEY_ANGLES_CONFIG = [
       POSE_LANDMARKS.RIGHT_ELBOW,
       POSE_LANDMARKS.RIGHT_WRIST,
     ],
-    tolerance: 35, // [수정] 팔꿈치 허용 오차 (기본값: 35도)
+    tolerance: 26, // [수정] 팔꿈치 허용 오차 (기본값: 35도)
   },
   {
     name: '오른쪽 어깨',
@@ -138,7 +138,7 @@ const KEY_ANGLES_CONFIG = [
       POSE_LANDMARKS.RIGHT_SHOULDER,
       POSE_LANDMARKS.RIGHT_HIP,
     ],
-    tolerance: 35, // [수정] 어깨 허용 오차 (기본값: 35도)
+    tolerance: 26, // [수정] 어깨 허용 오차 (기본값: 35도)
   },
   // 왼다리
   {
@@ -148,7 +148,7 @@ const KEY_ANGLES_CONFIG = [
       POSE_LANDMARKS.LEFT_HIP,
       POSE_LANDMARKS.LEFT_KNEE,
     ],
-    tolerance: 30, // [수정] 엉덩이 허용 오차 (기본값: 30도)
+    tolerance: 21, // [수정] 엉덩이 허용 오차 (기본값: 30도)
   },
   {
     name: '왼쪽 무릎',
@@ -157,7 +157,7 @@ const KEY_ANGLES_CONFIG = [
       POSE_LANDMARKS.LEFT_KNEE,
       POSE_LANDMARKS.LEFT_ANKLE,
     ],
-    tolerance: 30, // [수정] 무릎 허용 오차 (기본값: 30도)
+    tolerance: 21, // [수정] 무릎 허용 오차 (기본값: 30도)
   },
   // 오른다리
   {
@@ -167,7 +167,7 @@ const KEY_ANGLES_CONFIG = [
       POSE_LANDMARKS.RIGHT_HIP,
       POSE_LANDMARKS.RIGHT_KNEE,
     ],
-    tolerance: 30, // [수정] 엉덩이 허용 오차 (기본값: 30도)
+    tolerance: 21, // [수정] 엉덩이 허용 오차 (기본값: 30도)
   },
   {
     name: '오른쪽 무릎',
@@ -176,7 +176,45 @@ const KEY_ANGLES_CONFIG = [
       POSE_LANDMARKS.RIGHT_KNEE,
       POSE_LANDMARKS.RIGHT_ANKLE,
     ],
-    tolerance: 30, // [수정] 무릎 허용 오차 (기본값: 30도)
+    tolerance: 21, // [수정] 무릎 허용 오차 (기본값: 30도)
+  },
+  // 왼발
+  {
+    name: '왼쪽 발목',
+    joints: [
+      POSE_LANDMARKS.LEFT_KNEE,
+      POSE_LANDMARKS.LEFT_ANKLE,
+      POSE_LANDMARKS.LEFT_FOOT_INDEX,
+    ],
+    tolerance: 21, // 발목 허용 오차
+  },
+  {
+    name: '왼쪽 발',
+    joints: [
+      POSE_LANDMARKS.LEFT_ANKLE,
+      POSE_LANDMARKS.LEFT_HEEL,
+      POSE_LANDMARKS.LEFT_FOOT_INDEX,
+    ],
+    tolerance: 21, // 정강이-발 허용 오차
+  },
+  // 오른발
+  {
+    name: '오른쪽 발목',
+    joints: [
+      POSE_LANDMARKS.RIGHT_KNEE,
+      POSE_LANDMARKS.RIGHT_ANKLE,
+      POSE_LANDMARKS.RIGHT_FOOT_INDEX,
+    ],
+    tolerance: 21, // 발목 허용 오차
+  },
+  {
+    name: '오른쪽 발',
+    joints: [
+      POSE_LANDMARKS.RIGHT_ANKLE,
+      POSE_LANDMARKS.RIGHT_HEEL,
+      POSE_LANDMARKS.RIGHT_FOOT_INDEX,
+    ],
+    tolerance: 21, // 정강이-발 허용 오차
   },
 ];
 
@@ -262,7 +300,9 @@ export function comparePoses(
     }
   }
 
-  const accuracy = validCount > 0 ? Math.round(totalScore / validCount) : 0;
+  // 소수점 2자리까지 계산 (랭킹 세분화용)
+  const accuracy =
+    validCount > 0 ? Math.round((totalScore / validCount) * 100) / 100 : 0;
 
   // 피드백 생성
   if (validCount === 0) {

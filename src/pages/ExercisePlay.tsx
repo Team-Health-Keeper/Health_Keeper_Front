@@ -44,6 +44,10 @@ export default function ExercisePlay() {
   const [accuracy, setAccuracy] = useState(0);
   const [feedback, setFeedback] = useState<string[]>([]);
   const [scores, setScores] = useState<number[]>([]);
+  const [isFinishing, setIsFinishing] = useState(false);
+
+  // 화면 크기 감지 (모바일 vs 데스크탑)
+  const [isMobile, setIsMobile] = useState(false);
 
   // JSON 포즈 데이터
   const [poseData, setPoseData] = useState<PoseData | null>(null);
@@ -60,6 +64,17 @@ export default function ExercisePlay() {
   // TTS 관련
   const lastSpokenRef = useRef<string>('');
   const lastSpokenTimeRef = useRef<number>(0);
+
+  // 화면 크기 감지
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // 운동이 없으면 목록으로 이동
   useEffect(() => {
@@ -224,6 +239,9 @@ export default function ExercisePlay() {
 
   // 운동 종료
   const handleFinish = () => {
+    if (isFinishing) return; // 중복 클릭 방지
+    setIsFinishing(true);
+
     if (videoRef.current) {
       videoRef.current.pause();
     }
@@ -248,8 +266,10 @@ export default function ExercisePlay() {
       feedbackHistory,
     };
 
-    // 결과 페이지로 이동
-    navigate('/exercise/result', { state: { result } });
+    // 상태 업데이트 후 즉시 네비게이션 (setTimeout으로 리렌더링 대기 없이)
+    setTimeout(() => {
+      navigate('/exercise/result', { state: { result } });
+    }, 0);
   };
 
   // 비디오 시간 업데이트
@@ -310,9 +330,23 @@ export default function ExercisePlay() {
             뒤로
           </Button>
           <h1 className="text-xl font-bold">{exercise.name}</h1>
-          <Button variant="destructive" size="sm" onClick={handleFinish}>
-            <StopCircle className="h-4 w-4 mr-2" />
-            측정 종료
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleFinish}
+            disabled={isFinishing}
+          >
+            {isFinishing ? (
+              <>
+                <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                결과 처리 중...
+              </>
+            ) : (
+              <>
+                <StopCircle className="h-4 w-4 mr-2" />
+                측정 종료
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -320,10 +354,16 @@ export default function ExercisePlay() {
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
         <div className="container mx-auto px-4 py-3">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+            <p className="flex items-center gap-2 text-amber-700">
+              <span className="text-lg">🎬</span>
+              <span>
+                <strong>처음이라면?</strong> 영상을 먼저 확인 후, 처음으로
+                돌아가 시작 버튼을 눌러주세요!
+              </span>
+            </p>
             <p className="flex items-center gap-2 text-blue-700">
               <span className="text-lg">💡</span>
               <span>
-                더 정확한 자세 분석을 위해{' '}
                 <strong>전신이 카메라에 잘 보이도록</strong> 해주세요.
               </span>
             </p>
@@ -338,10 +378,10 @@ export default function ExercisePlay() {
       </div>
 
       <div className="container mx-auto px-4 py-4">
-        {/* 메인 뷰: 영상 + 웹캠 */}
+        {/* 메인 뷰: 데스크탑은 좌우 그리드, 모바일은 영상 전체 */}
         <div className="grid gap-4 lg:grid-cols-2 mb-4">
           {/* 가이드 영상 */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden lg:col-span-1 relative">
             <div
               ref={videoContainerRef}
               className="relative bg-black"
@@ -371,8 +411,8 @@ export default function ExercisePlay() {
                   <p>가이드 영상 준비 중</p>
                 </div>
               )}
-              {/* 시간 표시 */}
-              <div className="absolute bottom-3 left-3 bg-black/70 text-white text-sm px-2 py-1 rounded">
+              {/* 시간 표시 - 모바일에서는 PIP와 겹치지 않게 위치 조정 */}
+              <div className="absolute bottom-3 lg:left-3 left-[40%] bg-black/70 text-white text-sm px-2 py-1 rounded">
                 {formatTime(currentTime)} / {formatTime(exercise.duration)}
               </div>
               {/* 컨트롤 버튼들 */}
@@ -419,32 +459,85 @@ export default function ExercisePlay() {
                 </Button>
               </div>
             </div>
+
+            {/* 웹캠 PIP (모바일 전용) - 카드 위에 오버레이 */}
+            {isMobile && !isFinishing && (
+              <div
+                className="absolute bottom-6 left-1 rounded-xl overflow-hidden shadow-2xl transition-all duration-300 z-10"
+                style={{
+                  width: '35%',
+                  maxWidth: '180px',
+                  minWidth: '120px',
+                  height: '120px',
+                  borderWidth: '4px',
+                  borderStyle: 'solid',
+                  borderColor:
+                    accuracy >= 80
+                      ? '#22c55e'
+                      : accuracy >= 60
+                      ? '#eab308'
+                      : '#ef4444',
+                  boxShadow: `0 0 20px ${
+                    accuracy >= 80
+                      ? 'rgba(34, 197, 94, 0.5)'
+                      : accuracy >= 60
+                      ? 'rgba(234, 179, 8, 0.5)'
+                      : 'rgba(239, 68, 68, 0.5)'
+                  }`,
+                }}
+              >
+                <div className="w-full h-full">
+                  <PoseDetector
+                    targetFrame={currentFrame}
+                    onAccuracyChange={handleAccuracyChange}
+                    isActive={true}
+                    hideAccuracy={true}
+                  />
+                </div>
+                {/* 정확도 표시 - 우측 상단 */}
+                <div
+                  className="absolute top-1 right-1 text-white text-xs font-bold px-1.5 py-0.5 rounded z-20"
+                  style={{
+                    backgroundColor:
+                      accuracy >= 80
+                        ? '#22c55e'
+                        : accuracy >= 60
+                        ? '#eab308'
+                        : '#ef4444',
+                  }}
+                >
+                  {accuracy}%
+                </div>
+              </div>
+            )}
           </Card>
 
-          {/* 웹캠 + 자세 분석 */}
-          <Card className="overflow-hidden">
-            <div
-              className="relative bg-muted"
-              style={{ height: 'calc(50vh - 80px)', minHeight: '300px' }}
-            >
-              <PoseDetector
-                targetFrame={currentFrame}
-                onAccuracyChange={handleAccuracyChange}
-                isActive={true}
-              />
-              {/* 포즈 데이터 로딩 상태 */}
-              {isLoadingPose && (
-                <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                  포즈 데이터 로딩 중...
-                </div>
-              )}
-              {!isLoadingPose && !poseData && (
-                <div className="absolute top-3 left-3 bg-yellow-500/70 text-white text-xs px-2 py-1 rounded">
-                  포즈 데이터 없음
-                </div>
-              )}
-            </div>
-          </Card>
+          {/* 웹캠 + 자세 분석 (데스크탑 전용) */}
+          {!isMobile && !isFinishing && (
+            <Card className="overflow-hidden">
+              <div
+                className="relative bg-muted"
+                style={{ height: 'calc(50vh - 80px)', minHeight: '300px' }}
+              >
+                <PoseDetector
+                  targetFrame={currentFrame}
+                  onAccuracyChange={handleAccuracyChange}
+                  isActive={true}
+                />
+                {/* 포즈 데이터 로딩 상태 */}
+                {isLoadingPose && (
+                  <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                    포즈 데이터 로딩 중...
+                  </div>
+                )}
+                {!isLoadingPose && !poseData && (
+                  <div className="absolute top-3 left-3 bg-yellow-500/70 text-white text-xs px-2 py-1 rounded">
+                    포즈 데이터 없음
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* 정확도 미터 */}

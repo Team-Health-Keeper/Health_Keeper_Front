@@ -1,14 +1,163 @@
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Home, RotateCcw, Trophy, AlertCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  ArrowLeft,
+  Home,
+  RotateCcw,
+  Trophy,
+  AlertCircle,
+  Medal,
+  Upload,
+  Crown,
+  User,
+} from 'lucide-react';
 import { getAccuracyGrade, getAccuracyColor } from '@/components/exercise';
+import { apiFetch } from '@/lib/utils';
 import type { ExerciseResult } from '@/components/exercise';
+
+interface RankingItem {
+  id: number;
+  user_id: number;
+  user_name: string;
+  title: string;
+  average_accuracy: number;
+  exercise_duration: number;
+  created_at: string;
+  rank_position: number;
+}
+
+interface MyRecord {
+  id: number;
+  title: string;
+  average_accuracy: number;
+  exercise_duration: number;
+  created_at: string;
+  myRank: number;
+  totalParticipants: number;
+}
 
 export default function ExerciseResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const result = location.state?.result as ExerciseResult | undefined;
+
+  // 랭킹 관련 상태
+  const [rankings, setRankings] = useState<RankingItem[]>([]);
+  const [myRecord, setMyRecord] = useState<MyRecord | null>(null);
+  const [isLoadingRanking, setIsLoadingRanking] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [registerMessage, setRegisterMessage] = useState<string | null>(null);
+
+  // 랭킹 데이터 로드
+  useEffect(() => {
+    if (result?.exerciseName) {
+      loadRankingData();
+    }
+  }, [result?.exerciseName]);
+
+  const loadRankingData = async () => {
+    if (!result?.exerciseName) return;
+
+    setIsLoadingRanking(true);
+    try {
+      // 랭킹 조회 (공개 API) - title로 조회
+      const encodedTitle = encodeURIComponent(result.exerciseName);
+      const rankingRes = await apiFetch<{
+        success: boolean;
+        data: RankingItem[];
+      }>(`/api/exercise/ranking/${encodedTitle}?limit=10`);
+      if (rankingRes.success) {
+        setRankings(rankingRes.data);
+      }
+
+      // 내 기록 조회 (인증 필요)
+      const token = sessionStorage.getItem('authToken');
+      if (token) {
+        try {
+          const myRecordRes = await apiFetch<{
+            success: boolean;
+            data: MyRecord | null;
+          }>(`/api/exercise/my-record/${encodedTitle}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (myRecordRes.success && myRecordRes.data) {
+            setMyRecord(myRecordRes.data);
+          }
+        } catch (e) {
+          // 인증 실패 또는 기록 없음
+          console.log('내 기록 없음 또는 인증 필요');
+        }
+      }
+    } catch (error) {
+      console.error('랭킹 조회 실패:', error);
+    } finally {
+      setIsLoadingRanking(false);
+    }
+  };
+
+  const handleRegisterRecord = async () => {
+    if (!result) return;
+
+    const token = sessionStorage.getItem('authToken');
+    if (!token) {
+      setRegisterMessage('로그인이 필요합니다.');
+      return;
+    }
+
+    setIsRegistering(true);
+    setRegisterMessage(null);
+
+    try {
+      const response = await apiFetch<{
+        success: boolean;
+        message: string;
+        data: { isUpdate: boolean };
+      }>('/api/exercise', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: result.exerciseName,
+          averageAccuracy: result.averageAccuracy,
+          exerciseDuration: result.duration,
+        }),
+      });
+
+      if (response.success) {
+        setRegisterMessage(
+          response.data.isUpdate
+            ? '기록이 업데이트되었습니다! 🔄'
+            : '기록이 등록되었습니다! 🎉'
+        );
+        // 랭킹 새로고침
+        await loadRankingData();
+      }
+    } catch (error: any) {
+      setRegisterMessage(error?.body?.message || '기록 등록에 실패했습니다.');
+    } finally {
+      setIsRegistering(false);
+      setShowConfirmDialog(false);
+    }
+  };
+
+  // 기록 등록 가능 여부 확인
+  const canRegister =
+    result && result.averageAccuracy > 0 && result.duration > 0;
 
   // 결과가 없으면 운동 목록으로 이동
   if (!result) {
@@ -60,6 +209,23 @@ export default function ExerciseResultPage() {
       return `${mins}분 ${secs}초`;
     }
     return `${secs}초`;
+  };
+
+  const getRankIcon = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return <Crown className="h-5 w-5 text-yellow-500" />;
+      case 2:
+        return <Medal className="h-5 w-5 text-gray-400" />;
+      case 3:
+        return <Medal className="h-5 w-5 text-amber-600" />;
+      default:
+        return (
+          <span className="text-sm font-bold text-muted-foreground">
+            {rank}
+          </span>
+        );
+    }
   };
 
   return (
@@ -201,6 +367,123 @@ export default function ExerciseResultPage() {
               </div>
             )}
 
+            {/* 랭킹 섹션 */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-yellow-500" />이 운동 랭킹 TOP
+                  10
+                </h3>
+                {canRegister && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowConfirmDialog(true)}
+                    disabled={isRegistering}
+                    className="gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {myRecord ? '기록 갱신' : '기록 등록'}
+                  </Button>
+                )}
+              </div>
+
+              {/* 내 현재 기록 */}
+              {myRecord && (
+                <div className="mb-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <User className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">내 등록 기록</p>
+                        <p className="text-xs text-muted-foreground">
+                          {myRecord.totalParticipants}명 중 {myRecord.myRank}위
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">
+                        {myRecord.average_accuracy}%
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDuration(myRecord.exercise_duration)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 등록 메시지 */}
+              {registerMessage && (
+                <div
+                  className={`mb-4 p-3 rounded-lg text-sm ${
+                    registerMessage.includes('실패') ||
+                    registerMessage.includes('필요')
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-green-50 text-green-700 border border-green-200'
+                  }`}
+                >
+                  {registerMessage}
+                </div>
+              )}
+
+              {/* 랭킹 리스트 */}
+              {isLoadingRanking ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+                  랭킹 불러오는 중...
+                </div>
+              ) : rankings.length > 0 ? (
+                <div className="space-y-2">
+                  {rankings.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        item.rank_position <= 3
+                          ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          {getRankIcon(item.rank_position)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {item.user_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDuration(item.exercise_duration)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p
+                          className="font-bold"
+                          style={{
+                            color: getAccuracyColor(item.average_accuracy),
+                          }}
+                        >
+                          {item.average_accuracy}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {getAccuracyGrade(item.average_accuracy)}등급
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground bg-muted rounded-lg">
+                  <Trophy className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">아직 등록된 기록이 없습니다</p>
+                  <p className="text-xs mt-1">첫 번째로 기록을 등록해보세요!</p>
+                </div>
+              )}
+            </div>
+
             {/* 액션 버튼 */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
@@ -226,6 +509,88 @@ export default function ExerciseResultPage() {
           {result.completedAt.toLocaleString('ko-KR')} 완료
         </p>
       </div>
+
+      {/* 기록 등록 확인 다이얼로그 */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              기록 등록
+            </DialogTitle>
+            <DialogDescription>
+              {myRecord ? (
+                <>
+                  이전에 등록한 기록이 있습니다. 새 기록으로
+                  업데이트하시겠습니까?
+                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">이전 기록:</span>
+                      <span className="font-medium">
+                        {myRecord.average_accuracy}% /{' '}
+                        {formatDuration(myRecord.exercise_duration)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">새 기록:</span>
+                      <span className="font-medium text-primary">
+                        {result.averageAccuracy}% /{' '}
+                        {formatDuration(result.duration)}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-amber-600 text-sm">
+                    ⚠️ 이전 기록은 삭제되고 새 기록만 남습니다.
+                  </p>
+                </>
+              ) : (
+                <>
+                  이 기록을 랭킹에 등록하시겠습니까?
+                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">운동:</span>
+                      <span className="font-medium">{result.exerciseName}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">정확도:</span>
+                      <span className="font-medium text-primary">
+                        {result.averageAccuracy}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">운동 시간:</span>
+                      <span className="font-medium">
+                        {formatDuration(result.duration)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              취소
+            </Button>
+            <Button onClick={handleRegisterRecord} disabled={isRegistering}>
+              {isRegistering ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                  등록 중...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {myRecord ? '기록 갱신' : '기록 등록'}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
