@@ -16,6 +16,8 @@ import { HeroSection } from "@/components/common/HeroSection"
 import { FiltersBar as FacilitiesFiltersBar } from "@/components/facilities/FiltersBar"
 import { MapPane } from "@/components/facilities/MapPane"
 import { FacilitiesList } from "@/components/facilities/FacilitiesList"
+import { LoginModal } from "@/components/login-modal"
+import { isAuthenticated } from "@/lib/auth"
 
 // 인기 카테고리 (응답 빈도 기반)
 const MAJOR_FACILITY_TYPES = [
@@ -83,6 +85,12 @@ interface NearbyApiResponse {
 }
 
 export default function FacilitiesPage() {
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      setLoginModalOpen(true)
+    }
+  }, [])
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
@@ -403,6 +411,22 @@ export default function FacilitiesPage() {
     fetchFacilities(1, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [committedQuery, activeCategory, userLat, userLng])
+
+  if (loginModalOpen && !isAuthenticated()) {
+    return (
+      <>
+        <SiteHeader />
+        <LoginModal
+          isOpen={loginModalOpen}
+          onClose={() => {
+            setLoginModalOpen(false)
+            window.history.back()
+          }}
+          onLoginSuccess={() => setLoginModalOpen(false)}
+        />
+      </>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white">

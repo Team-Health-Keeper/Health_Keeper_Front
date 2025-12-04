@@ -1,6 +1,7 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { BackToTopButton } from './components/common/BackToTopButton';
+import { LoginModal } from './components/login-modal';
 
 import Home from './pages/Home';
 import Assessment from './pages/Assessment';
@@ -18,6 +19,28 @@ import ThreeByThreeTestPage from './pages/ThreeByThreeTest';
 import TWallTestPage from './pages/TWallTest';
 
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [loginOpen, setLoginOpen] = useState(false);
+
+  // 공개 경로: 운동 레시피, 동호회 찾기, 시설 찾기
+  const publicPaths = new Set<string>(['/recipes', '/community', '/facilities']);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    const path = location.pathname;
+
+    // 레시피 상세도 공개 처리
+    const isRecipeDetail = path.startsWith('/recipes/');
+    const isPublic = publicPaths.has(path) || isRecipeDetail || path === '/';
+
+    if (!token && !isPublic) {
+      // 보호 경로 접근 차단: 메인으로 보내고 로그인 모달 오픈
+      if (path !== '/') navigate('/');
+      setLoginOpen(true);
+    }
+  }, [location.pathname, navigate]);
+
   return (
     <>
       <Routes>
@@ -36,6 +59,7 @@ function App() {
         <Route path="/three-grid" element={<ThreeByThreeTestPage />} />
         <Route path="/twall" element={<TWallTestPage />} />
       </Routes>
+      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
       <BackToTopButton />
     </>
   );

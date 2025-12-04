@@ -15,8 +15,16 @@ import { getApiBase, apiFetch } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HeroSection } from "@/components/common/HeroSection"
+import { LoginModal } from "@/components/login-modal"
+import { isAuthenticated } from "@/lib/auth"
 
 export default function RecipesPage() {
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      setLoginModalOpen(true)
+    }
+  }, [])
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
@@ -83,6 +91,24 @@ export default function RecipesPage() {
       clearTimeout(timer)
     }
   }, [page, limit, search, forMe])
+
+  if (loginModalOpen && !isAuthenticated()) {
+    return (
+      <>
+        <SiteHeader />
+        <LoginModal
+          isOpen={loginModalOpen}
+          onClose={() => {
+            setLoginModalOpen(false)
+            window.history.back()
+          }}
+          onLoginSuccess={() => {
+            setLoginModalOpen(false)
+          }}
+        />
+      </>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">

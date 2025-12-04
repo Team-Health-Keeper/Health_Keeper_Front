@@ -118,11 +118,14 @@ export const Hero: FC<HeroProps> = ({ onGetStarted, onGoRecipes }) => {
                   {panels[panelIndex].primaryCTA.label}
                 </Button>
               )}
-              <Button size="lg" variant="outline" className="border-2 border-gray-300 px-8 py-6 text-base hover:bg-gray-50 bg-transparent" asChild>
-                <Link to={panels[panelIndex].secondaryCTA.to}>
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  {panels[panelIndex].secondaryCTA.label}
-                </Link>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-gray-300 px-8 py-6 text-base bg-gray-50 text-gray-800 hover:bg-gray-100 hover:text-gray-900"
+                onClick={onGoRecipes}
+              >
+                <BookOpen className="mr-2 h-5 w-5" />
+                {panels[panelIndex].secondaryCTA.label}
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-6 pt-4">

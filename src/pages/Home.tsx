@@ -13,6 +13,7 @@ import { HowItWorks } from "@/components/home/HowItWorks"
 import { Features } from "@/components/home/Features"
 import { RecipePreview } from "@/components/home/RecipePreview"
 import { StartCTA } from "@/components/home/StartCTA"
+import { isAuthenticated } from "@/lib/auth"
 
 export default function Home() {
   const navigate = useNavigate()
@@ -35,6 +36,14 @@ export default function Home() {
     if (justLoggedOut) {
       sessionStorage.removeItem("justLoggedOut")
       setShowLogoutNotice(true)
+    }
+    // also react to runtime logout event without navigation
+    const onJustLoggedOut = () => {
+      setShowLogoutNotice(true)
+    }
+    window.addEventListener('justLoggedOut', onJustLoggedOut)
+    return () => {
+      window.removeEventListener('justLoggedOut', onJustLoggedOut)
     }
   }, [])
 
@@ -99,10 +108,16 @@ export default function Home() {
   }
 
   const handleGetStarted = () => {
-    const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null
-    const userStr = typeof window !== "undefined" ? sessionStorage.getItem("user") : null
-    if (token || userStr) {
+    if (isAuthenticated()) {
       navigate("/assessment")
+    } else {
+      setLoginModalOpen(true)
+    }
+  }
+
+  const handleGoRecipes = () => {
+    if (isAuthenticated()) {
+      navigate('/recipes')
     } else {
       setLoginModalOpen(true)
     }
@@ -126,7 +141,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1">
         <div className="min-h-screen bg-white">
-          <Hero onGetStarted={handleGetStarted} onGoRecipes={() => navigate('/recipes')} />
+          <Hero onGetStarted={handleGetStarted} onGoRecipes={handleGoRecipes} />
 
           <HowItWorks />
 

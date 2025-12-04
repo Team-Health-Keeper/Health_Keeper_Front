@@ -104,8 +104,16 @@ export function SiteHeader() {
           sessionStorage.removeItem('authToken');
           sessionStorage.setItem('justLoggedOut', '1');
           setUser(null);
-          // brief delay so the overlay is perceptible
-          setTimeout(() => navigate('/'), 400);
+          // brief delay so the overlay is perceptible, then hide
+          setTimeout(() => {
+            setLoggingOut(false);
+            try {
+              window.dispatchEvent(new Event('justLoggedOut'));
+            } catch (_) {}
+            if (location.pathname !== '/') {
+              navigate('/');
+            }
+          }, 400);
         }
       }
     };

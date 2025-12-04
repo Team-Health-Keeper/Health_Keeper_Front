@@ -23,9 +23,12 @@ import { exercises } from '@/components/exercise';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { HeroSection } from '@/components/common/HeroSection';
+import { LoginModal } from '@/components/login-modal';
+import { isAuthenticated } from '@/lib/auth';
 
 export default function Exercise() {
   const navigate = useNavigate();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [isCheckingCamera, setIsCheckingCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
@@ -48,6 +51,10 @@ export default function Exercise() {
 
   // 카메라 확인 및 운동 시작
   const handleStartExercise = async (exerciseId: string) => {
+    if (!isAuthenticated()) {
+      setLoginModalOpen(true);
+      return;
+    }
     setSelectedExerciseId(exerciseId);
     setIsCheckingCamera(true);
     setCameraError(null);
@@ -114,6 +121,17 @@ export default function Exercise() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
+
+      {!isAuthenticated() && (
+        <LoginModal
+          isOpen={loginModalOpen}
+          onClose={() => {
+            setLoginModalOpen(false);
+            window.history.back();
+          }}
+          onLoginSuccess={() => setLoginModalOpen(false)}
+        />
+      )}
 
       <HeroSection
         badgeIcon={Sparkles}

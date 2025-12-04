@@ -7,12 +7,20 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HeroSection } from "@/components/common/HeroSection"
 import { getApiBase, apiFetch } from "@/lib/utils"
+import { LoginModal } from "@/components/login-modal"
+import { isAuthenticated } from "@/lib/auth"
 import { FiltersBar } from "@/components/community/FiltersBar"
 import { StatsSection } from "@/components/community/StatsSection"
 import { ClubsGrid } from "@/components/community/ClubsGrid"
 import type { Club } from "@/components/community/ClubCard"
 
 export default function ClubsPage() {
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      setLoginModalOpen(true)
+    }
+  }, [])
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
@@ -264,6 +272,22 @@ export default function ClubsPage() {
 
   // 클라이언트 필터 제거: 지역/카테고리는 서버에서 처리
   const filteredClubs = clubs
+
+  if (loginModalOpen && !isAuthenticated()) {
+    return (
+      <>
+        <SiteHeader />
+        <LoginModal
+          isOpen={loginModalOpen}
+          onClose={() => {
+            setLoginModalOpen(false)
+            window.history.back()
+          }}
+          onLoginSuccess={() => setLoginModalOpen(false)}
+        />
+      </>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white">
