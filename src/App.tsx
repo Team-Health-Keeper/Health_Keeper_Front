@@ -14,6 +14,8 @@ import AuthCallback from './pages/AuthCallback';
 import Exercise from './pages/Exercise';
 import ExercisePlay from './pages/ExercisePlay';
 import ExerciseResult from './pages/ExerciseResult';
+import ThreeByThreeTestPage from './pages/ThreeByThreeTest';
+import TWallTestPage from './pages/TWallTest';
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
         <Route path="/exercise" element={<Exercise />} />
         <Route path="/exercise/:id" element={<ExercisePlay />} />
         <Route path="/exercise/result" element={<ExerciseResult />} />
+        <Route path="/three-grid" element={<ThreeByThreeTestPage />} />
+        <Route path="/twall" element={<TWallTestPage />} />
       </Routes>
       <BackToTopButton />
     </>

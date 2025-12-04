@@ -17,6 +17,7 @@ export interface MeasurementGridProps {
   requiredMeasurementIds: string[]
   autoValues: Record<string, string>
   allRequiredFilled: boolean
+  errors?: Record<string, string | null>
   onChange: (id: string, value: string) => void
   onOpenTextGuide: (id: string) => void
   onOpenVideoGuide: (label: string, videoId: string) => void
@@ -33,6 +34,7 @@ export function MeasurementGrid({
   requiredMeasurementIds,
   autoValues,
   allRequiredFilled,
+  errors,
   onChange,
   onOpenTextGuide,
   onOpenVideoGuide,
@@ -60,6 +62,7 @@ export function MeasurementGrid({
               const guideVideoId = guideVideoRaw ? extractYouTubeId(guideVideoRaw) : null
               const isAutoField = ["42", "28", "52"].includes(id)
               const autoValue = autoValues[id] || ""
+              const errMsg = errors?.[id] || null
               return (
                 <div key={id} className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -80,6 +83,32 @@ export function MeasurementGrid({
                       {!guideVideoId && (
                         <span className="h-8 w-8 inline-block" aria-hidden="true" />
                       )}
+                      {id === "51" && (
+                        <Button
+                          type="button"
+                          className="h-8 px-3 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          title="3×3 버튼 테스트 열기"
+                          onClick={() => {
+                            const features = "popup=yes,noopener,noreferrer,width=820,height=820,resizable=yes,scrollbars=no"
+                            window.open("/three-grid", "three-grid", features)
+                          }}
+                        >
+                          3×3 테스트
+                        </Button>
+                      )}
+                      {id === "15" && (
+                        <Button
+                          type="button"
+                          className="h-8 px-3 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                          title="T-wall 테스트 열기"
+                          onClick={() => {
+                            const features = "popup=yes,noopener,noreferrer,width=820,height=820,resizable=yes,scrollbars=no"
+                            window.open("/twall", "twall", features)
+                          }}
+                        >
+                          T‑wall 테스트
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <Input
@@ -91,6 +120,9 @@ export function MeasurementGrid({
                     onChange={(e) => !isAutoField && onChange(id, e.target.value)}
                     readOnly={isAutoField}
                   />
+                  {errMsg && (
+                    <p className="text-xs text-destructive mt-1">{errMsg}</p>
+                  )}
                 </div>
               )
             })}

@@ -17,13 +17,14 @@ export interface BasicInfoFormProps {
   ageGroup: string
   ageWarning: string | null
   showAgeMonths?: boolean
+  errors?: Partial<Record<"ageMonths"|"height"|"weight"|"waist", string | null>>
   onChange: (field: "age"|"ageMonths"|"gender"|"height"|"weight"|"waist", value: string) => void
   onOpenWaistGuide: () => void
 }
 
 export function BasicInfoForm({
   age, ageMonths, gender, height, weight, waist, bmi,
-  ageGroup, ageWarning, showAgeMonths,
+  ageGroup, ageWarning, showAgeMonths, errors,
   onChange, onOpenWaistGuide,
 }: BasicInfoFormProps) {
   return (
@@ -51,6 +52,9 @@ export function BasicInfoForm({
                 value={ageMonths || ""}
                 onChange={(e) => onChange("ageMonths", e.target.value)}
               />
+              {errors?.ageMonths && (
+                <p className="text-xs text-destructive">{errors.ageMonths}</p>
+              )}
             </div>
           )}
           <div className={`space-y-2 ${showAgeMonths ? 'md:col-span-2' : 'md:col-span-1'}`}>
@@ -78,10 +82,16 @@ export function BasicInfoForm({
           <div className="space-y-2">
             <Label htmlFor="height">신장 (cm)</Label>
             <Input id="height" type="number" step="0.1" placeholder="예: 170.5" value={height} onChange={(e) => onChange("height", e.target.value)} />
+            {errors?.height && (
+              <p className="text-xs text-destructive">{errors.height}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="weight">체중 (kg)</Label>
             <Input id="weight" type="number" step="0.1" placeholder="예: 65.5" value={weight} onChange={(e) => onChange("weight", e.target.value)} />
+            {errors?.weight && (
+              <p className="text-xs text-destructive">{errors.weight}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="waist">허리둘레 (cm)</Label>
@@ -91,6 +101,9 @@ export function BasicInfoForm({
                 <BookOpen className="h-4 w-4" />
               </Button>
             </div>
+            {errors?.waist && (
+              <p className="text-xs text-destructive">{errors.waist}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="bmi">BMI (kg/㎡)</Label>
