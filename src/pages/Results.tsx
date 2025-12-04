@@ -263,7 +263,7 @@ export default function Results() {
                 </ExercisePhaseSection>
               )}
               {data.cooldown.length > 0 && (
-                <ExercisePhaseSection title="정리운동" color="blue" count={data.cooldown.length} gridClassName="grid gap-4 sm:grid-cols-2">
+                <ExercisePhaseSection title="정리운동" color="blue" count={data.cooldown.length} gridClassName="grid gap-4 sm:grid-cols-2" sectionClassName="mb-0">
                   {data.cooldown.map(ex => (
                     <ExerciseVideoCard key={ex.videoId + ex.name} exercise={ex} onOpen={setSelectedVideo} />
                   ))}

@@ -9,12 +9,13 @@ export interface ExercisePhaseSectionProps {
   count: number
   children: ReactNode
   gridClassName?: string
+  sectionClassName?: string
 }
 
-export function ExercisePhaseSection({ title, color, count, children, gridClassName }: ExercisePhaseSectionProps) {
+export function ExercisePhaseSection({ title, color, count, children, gridClassName, sectionClassName }: ExercisePhaseSectionProps) {
   const colorClass = color === 'green' ? 'bg-green-500' : color === 'blue' ? 'bg-blue-500' : 'bg-primary'
   return (
-    <section className="mb-12">
+    <section className={sectionClassName ?? 'mb-12'}>
       <div className="flex items-center gap-3 mb-6">
         <div className={`h-10 w-1 ${colorClass} rounded-full`} />
         <h2 className="text-2xl font-bold text-foreground">{title}</h2>
