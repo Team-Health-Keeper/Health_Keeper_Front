@@ -38,7 +38,7 @@ export function ProfileCard({
             </Badge>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">최근 나의 전체 순위</span>
+            <span className="text-muted-foreground">같은 등급 내 순위</span>
             <span className="font-semibold text-foreground">
               상위 {ranking.topPercent || 0}%
             </span>

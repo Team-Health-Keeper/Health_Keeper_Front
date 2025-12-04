@@ -40,6 +40,7 @@ export interface MyPageData {
     currentStreak: number;
   };
   badgeInfo: string;
+  firstPlaceCount: number;
   weeklyVideoWatch: number;
   grass: GrassData[];
   recipes: Recipe[];
@@ -52,15 +53,17 @@ export interface BadgeItem {
   icon: string;
   name: string;
   earned?: boolean;
+  isDynamic?: boolean;
+  count?: number;
 }
 
 export const BADGE_LIST: BadgeItem[] = [
   { id: '1', icon: '🔥', name: '7일 연속' },
   { id: '2', icon: '⭐', name: '1등급 달성' },
-  { id: '3', icon: '🏆', name: '전체 상위 2%' },
+  { id: '3', icon: '🏆', name: '등급 전체 상위 2%' },
   { id: '4', icon: '💪', name: '30일 완주' },
   { id: '5', icon: '🎯', name: '체력측정 3회' },
-  { id: '6', icon: '👑', name: '프리미엄' },
+  { id: '6', icon: '🥇', name: 'AI코치 1위', isDynamic: true },
 ];
 
 // 잔디 상세 정보 타입
