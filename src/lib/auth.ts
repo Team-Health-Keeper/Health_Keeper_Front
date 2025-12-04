@@ -1,6 +1,13 @@
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const v = sessionStorage.getItem('authToken');
+  if (!v) return null;
+  const trimmed = v.trim();
+  return trimmed && trimmed !== 'null' && trimmed !== 'undefined' ? trimmed : null;
+}
+
 export function isAuthenticated(): boolean {
-  if (typeof window === 'undefined') return false;
-  const token = sessionStorage.getItem('authToken');
-  const userStr = sessionStorage.getItem('user');
-  return Boolean(token || userStr);
+  const token = getAuthToken();
+  console.log('isAuthenticated check, token:', token);
+  return Boolean(token);
 }

@@ -27,7 +27,7 @@ function App() {
   const publicPaths = new Set<string>(['/recipes', '/community', '/facilities']);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
+    const token = sessionStorage.getItem('authToken');
     const path = location.pathname;
 
     // 레시피 상세도 공개 처리

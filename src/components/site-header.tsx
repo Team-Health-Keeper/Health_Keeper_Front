@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { User, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 import { LoginModal } from '@/components/login-modal';
+import { isAuthenticated } from '@/lib/auth';
 
 export function SiteHeader() {
   const [user, setUser] = useState<{ name: string; provider: string } | null>(
@@ -52,7 +53,7 @@ export function SiteHeader() {
   }, []);
 
   const handleStartClick = () => {
-    if (user) {
+    if (isAuthenticated()) {
       navigate('/assessment');
     } else {
       setIsLoginModalOpen(true);

@@ -53,8 +53,7 @@ function extractYouTubeId(input: string): string {
 
 const ageGroupMeasurements = {
   유아기: {
-    "7": "악력_좌(kg)",
-    "8": "악력_우(kg)",
+    "7": "악력(kg)",
     "9": "윗몸말아올리기(회)",
     "12": "앉아윗몸앞으로굽히기(cm)",
     "20": "왕복오래달리기(회)",
@@ -64,8 +63,7 @@ const ageGroupMeasurements = {
     "51": "3×3 버튼누르기(초)",
   },
   유소년: {
-    "7": "악력_좌(kg)",
-    "8": "악력_우(kg)",
+    "7": "악력(kg)",
     "9": "윗몸말아올리기(회)",
     "12": "앉아윗몸앞으로굽히기(cm)",
     "20": "왕복오래달리기(회)",
@@ -79,8 +77,7 @@ const ageGroupMeasurements = {
     "3": "체지방율(%)",
     "5": "이완기혈압_최저(mmHg)",
     "6": "수축기혈압_최고(mmHg)",
-    "7": "악력_좌(kg)",
-    "8": "악력_우(kg)",
+    "7": "악력(kg)",
     "9": "윗몸말아올리기(회)",
     "10": "반복점프(회)",
     "12": "앉아윗몸앞으로굽히기(cm)",
@@ -98,8 +95,7 @@ const ageGroupMeasurements = {
     "3": "체지방율(%)",
     "5": "이완기혈압_최저(mmHg)",
     "6": "수축기혈압_최고(mmHg)",
-    "7": "악력_좌(kg)",
-    "8": "악력_우(kg)",
+    "7": "악력(kg)",
     "12": "앉아윗몸앞으로굽히기(cm)",
     "19": "교차윗몸일으키기(회)",
     "22": "제자리 멀리뛰기(cm)",
@@ -112,8 +108,7 @@ const ageGroupMeasurements = {
     "3": "체지방률(%)",
     "5": "이완기최저혈압(mmHg)",
     "6": "수축기최고혈압(mmHg)",
-    "7": "악력_좌(kg)",
-    "8": "악력_우(kg)",
+    "7": "악력(kg)",
     "12": "앉아윗몸앞으로굽히기(cm)",
     "23": "의자에앉았다일어서기(회)",
     "25": "2분제자리걷기(회)",
@@ -126,9 +121,8 @@ const ageGroupMeasurements = {
 
 const requiredMeasurementIds = [
   "7",
-  "8",
   "28",
-  "52",
+  // "52", // keep if still needed; otherwise computed from 7 only or removed
   "9",
   "12",
   "19",
@@ -188,7 +182,6 @@ export default function AssessmentPage() {
   const GROUP_MEAS_RULES: Partial<Record<GroupName, Record<string, { min: number; max: number; note?: string }>>> = {
     유아기: {
       "7": { min: 0, max: 30, note: "유아기 악력은 보통 0–30kg 범위입니다" },
-      "8": { min: 0, max: 30, note: "유아기 악력은 보통 0–30kg 범위입니다" },
       "9": { min: 0, max: 100, note: "반복 횟수는 0–100회 이내로 입력해주세요" },
       "12": { min: -30, max: 60, note: "앉아윗몸앞으로굽히기는 -30–60cm 범위가 일반적입니다" },
       "20": { min: 0, max: 100, note: "왕복오래달리기는 0–100회 이내가 일반적입니다" },
@@ -198,7 +191,6 @@ export default function AssessmentPage() {
     },
     유소년: {
       "7": { min: 0, max: 60 },
-      "8": { min: 0, max: 60 },
       "9": { min: 0, max: 200 },
       "12": { min: -30, max: 80 },
       "20": { min: 0, max: 150 },
@@ -211,7 +203,6 @@ export default function AssessmentPage() {
       "5": { min: 40, max: 130 },
       "6": { min: 70, max: 220 },
       "7": { min: 0, max: 80 },
-      "8": { min: 0, max: 80 },
       "9": { min: 0, max: 200 },
       "10": { min: 0, max: 300 },
       "12": { min: -30, max: 80 },
@@ -229,7 +220,6 @@ export default function AssessmentPage() {
       "5": { min: 40, max: 130 },
       "6": { min: 70, max: 220 },
       "7": { min: 0, max: 90 },
-      "8": { min: 0, max: 90 },
       "9": { min: 0, max: 200 },
       "12": { min: -30, max: 80 },
       "19": { min: 0, max: 200 },
@@ -243,7 +233,6 @@ export default function AssessmentPage() {
       "5": { min: 40, max: 130 },
       "6": { min: 70, max: 220 },
       "7": { min: 0, max: 70 },
-      "8": { min: 0, max: 70 },
       "12": { min: -30, max: 80 },
       "23": { min: 0, max: 100 },
       "25": { min: 0, max: 400 },
@@ -415,18 +404,13 @@ export default function AssessmentPage() {
     })
   }, [height, waist])
 
-  // Auto-calculate 절대악력(kg, id "52") from 악력_좌(7) and 악력_우(8) using MAX 방식
+  // Auto-calculate 절대악력(kg, id "52") from 단일 악력(7)
   useEffect(() => {
-    const left = Number.parseFloat(measurementValues["7"] || "")
-    const right = Number.parseFloat(measurementValues["8"] || "")
-    const hasLeft = !Number.isNaN(left) && left > 0
-    const hasRight = !Number.isNaN(right) && right > 0
-    const maxVal = hasLeft || hasRight ? Math.max(hasLeft ? left : -Infinity, hasRight ? right : -Infinity) : NaN
-
+    const grip = Number.parseFloat(measurementValues["7"] || "")
     setMeasurementValues((prev) => {
       const next = { ...prev }
-      if (!Number.isNaN(maxVal) && maxVal > 0) {
-        const formatted = maxVal.toFixed(1)
+      if (!Number.isNaN(grip) && grip > 0) {
+        const formatted = grip.toFixed(1)
         if (next["52"] !== formatted) next["52"] = formatted
       } else {
         if (Object.prototype.hasOwnProperty.call(next, "52")) {
@@ -435,7 +419,7 @@ export default function AssessmentPage() {
       }
       return next
     })
-  }, [measurementValues["7"], measurementValues["8"]])
+  }, [measurementValues["7"]])
 
   // Auto-calculate 상대악력(%, id "28") = 절대악력(kg, id "52") / 체중(kg) * 100
   useEffect(() => {

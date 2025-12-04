@@ -76,11 +76,13 @@ function extractVideoId(urlStr: string | undefined | null): string {
 
 function mapAnalysis(raw: any): MappedRecipe | null {
   if (!raw || typeof raw !== 'object') return null
+  // Many APIs wrap payloads: try common containers
+  const payload = raw?.data ?? raw?.result ?? raw
   const percentileCandidate = [
-    raw.fitness_percentile,
-    raw.grade_percentile,
-    raw.percentile,
-    raw.fitnessPercentile,
+    payload.fitness_percentile,
+    payload.grade_percentile,
+    payload.percentile,
+    payload.fitnessPercentile,
   ].find(v => typeof v === 'number' && v >= 0 && v <= 100) ?? null
 
   const mapArray = (arr: any): ExerciseCommon[] => {
@@ -103,16 +105,22 @@ function mapAnalysis(raw: any): MappedRecipe | null {
 
   return {
     meta: {
-      title: raw.recipe_title || '맞춤 운동 레시피',
-      intro: raw.recipe_intro || raw.intro || '분석 결과를 기반으로 구성된 개인 맞춤형 루틴입니다.',
-      difficulty: raw.difficulty || '초급',
-      durationMin: typeof raw.duration_min === 'number' ? raw.duration_min : null,
-      fitnessGrade: raw.fitness_grade || raw.grade || '참가',
+      title: payload.recipe_title || '맞춤 운동 레시피',
+      intro: payload.recipe_intro || payload.intro || '분석 결과를 기반으로 구성된 개인 맞춤형 루틴입니다.',
+      difficulty: payload.difficulty || '초급',
+      durationMin: typeof payload.duration_min === 'number' ? payload.duration_min : null,
+      fitnessGrade: payload.fitness_grade || payload.grade || '참가',
       percentile: percentileCandidate,
     },
-    warmup: mapArray(raw.warmup_exercises || raw.warmup || []),
-    main: mapArray(raw.main_exercises || raw.main || []),
-    cooldown: mapArray(raw.cooldown_exercises || raw.cooldown || []),
+    warmup: mapArray(
+      payload.warmup_exercises || payload.warmup || payload.warm_up_card_list || []
+    ),
+    main: mapArray(
+      payload.main_exercises || payload.main || payload.main_card_list || []
+    ),
+    cooldown: mapArray(
+      payload.cooldown_exercises || payload.cooldown || payload.cool_down_card_list || []
+    ),
   }
 }
 
@@ -122,13 +130,33 @@ export default function Results() {
 
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem('analysisResult')
+      // 1) Primary: sessionStorage (same-origin only)
+      const stored = typeof window !== 'undefined' ? sessionStorage.getItem('analysisResult') : null
       if (stored) {
         const raw = JSON.parse(stored)
-        setAnalysis(mapAnalysis(raw))
+        const mapped = mapAnalysis(raw)
+        if (mapped) { setAnalysis(mapped); return }
+      }
+      // 2) Fallback: localStorage (survives reload; optional)
+      const ls = typeof window !== 'undefined' ? localStorage.getItem('analysisResult') : null
+      if (ls) {
+        const raw = JSON.parse(ls)
+        const mapped = mapAnalysis(raw)
+        if (mapped) { setAnalysis(mapped); return }
+      }
+      // 3) Fallback: query param ?analysis=<base64 or URI encoded JSON>
+      const sp = new URLSearchParams(window.location.search)
+      const qp = sp.get('analysis')
+      if (qp) {
+        try {
+          const decoded = decodeURIComponent(qp)
+          const raw = JSON.parse(decoded)
+          const mapped = mapAnalysis(raw)
+          if (mapped) { setAnalysis(mapped); return }
+        } catch {}
       }
     } catch (e) {
-      console.error('Failed to parse analysisResult', e)
+      console.error('Failed to load analysisResult', e)
     }
   }, [])
 

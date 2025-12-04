@@ -141,7 +141,8 @@ export const Hero: FC<HeroProps> = ({ onGetStarted, onGoRecipes }) => {
               <button aria-label="AI 코치" className={`h-2 w-2 rounded-full ${panelIndex === 1 ? "bg-[#0074B7]" : "bg-gray-300"}`} onClick={() => setPanelIndex(1)} />
             </div>
           </div>
-          <div className="relative fade-in-section">
+          {/* Right visual panel: only show on large screens; mobile uses faint BG above */}
+          <div className="relative fade-in-section hidden lg:block">
             <div className="relative rounded-3xl bg-gradient-to-br from-blue-100 to-blue-50 p-0 overflow-hidden">
               <img
                 src={panels[0].imageSrc}
