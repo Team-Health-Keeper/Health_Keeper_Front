@@ -8,6 +8,5 @@ export function getAuthToken(): string | null {
 
 export function isAuthenticated(): boolean {
   const token = getAuthToken();
-  console.log('isAuthenticated check, token:', token);
   return Boolean(token);
 }
