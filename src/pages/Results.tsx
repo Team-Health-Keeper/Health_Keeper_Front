@@ -14,6 +14,11 @@ import { GradeResultCard } from "@/components/recipe/GradeResultCard"
 import { ExerciseVideoCard, ExerciseCommon } from "@/components/recipe/ExerciseVideoCard"
 import { ExercisePhaseSection } from "@/components/recipe/ExercisePhaseSection"
 
+interface StrengthWeakness {
+  category: string
+  level: string
+}
+
 interface MappedRecipe {
   meta: {
     title: string
@@ -23,6 +28,8 @@ interface MappedRecipe {
     fitnessGrade: string
     percentile: number | null
   }
+  strengths: StrengthWeakness[]
+  weaknesses: StrengthWeakness[]
   warmup: ExerciseCommon[]
   main: ExerciseCommon[]
   cooldown: ExerciseCommon[]
@@ -84,6 +91,10 @@ function mapAnalysis(raw: any): MappedRecipe | null {
     payload.percentile,
     payload.fitnessPercentile,
   ].find(v => typeof v === 'number' && v >= 0 && v <= 100) ?? null
+  
+  // strengths와 weaknesses 추출
+  const strengths = payload.strengths || []
+  const weaknesses = payload.weaknesses || []
 
   const mapArray = (arr: any): ExerciseCommon[] => {
     if (!Array.isArray(arr)) return []
@@ -112,6 +123,8 @@ function mapAnalysis(raw: any): MappedRecipe | null {
       fitnessGrade: payload.fitness_grade || payload.grade || '참가',
       percentile: percentileCandidate,
     },
+    strengths: Array.isArray(strengths) ? strengths : [],
+    weaknesses: Array.isArray(weaknesses) ? weaknesses : [],
     warmup: mapArray(
       payload.warmup_exercises || payload.warmup || payload.warm_up_card_list || []
     ),
@@ -170,6 +183,14 @@ export default function Results() {
       fitnessGrade: '참가',
       percentile: null,
     },
+    strengths: [
+      { category: '근력', level: '우수' },
+      { category: '지구력', level: '양호' },
+    ],
+    weaknesses: [
+      { category: '유연성', level: '보통' },
+      { category: '순발력', level: '보통' },
+    ],
     warmup: [],
     main: [],
     cooldown: [],
@@ -194,7 +215,7 @@ export default function Results() {
         <div className="mx-auto max-w-4xl">
           <GradeResultCard grade={data.meta.fitnessGrade} percentile={data.meta.percentile} />
 
-          {/* 간단 강점/개선 (Placeholder – 실제 데이터 연동 시 대체) */}
+          {/* 강점/개선/순위 카드 */}
           <div className="mb-12 grid gap-6 md:grid-cols-3">
             <Card className="border-border">
               <CardHeader>
@@ -203,10 +224,20 @@ export default function Results() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-start gap-2"><span className="text-primary">•</span><span className="text-muted-foreground">근력: 우수</span></li>
-                  <li className="flex items-start gap-2"><span className="text-primary">•</span><span className="text-muted-foreground">지구력: 양호</span></li>
-                </ul>
+                {data.strengths && data.strengths.length > 0 ? (
+                  <ul className="space-y-2 text-sm">
+                    {data.strengths.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span className="text-muted-foreground">
+                          {item.category}: {item.level}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">강점 데이터가 없습니다</p>
+                )}
               </CardContent>
             </Card>
             <Card className="border-border">
@@ -216,10 +247,20 @@ export default function Results() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-start gap-2"><span className="text-accent">•</span><span className="text-muted-foreground">유연성: 보통</span></li>
-                  <li className="flex items-start gap-2"><span className="text-accent">•</span><span className="text-muted-foreground">순발력: 보통</span></li>
-                </ul>
+                {data.weaknesses && data.weaknesses.length > 0 ? (
+                  <ul className="space-y-2 text-sm">
+                    {data.weaknesses.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-accent">•</span>
+                        <span className="text-muted-foreground">
+                          {item.category}: {item.level}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">개선 필요 데이터가 없습니다</p>
+                )}
               </CardContent>
             </Card>
             <Card className="border-border">
@@ -230,7 +271,9 @@ export default function Results() {
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <p className="mb-1 text-3xl font-bold text-primary">{data.meta.percentile != null ? `${data.meta.percentile}%` : '35%'}</p>
+                  <p className="mb-1 text-3xl font-bold text-primary">
+                    {data.meta.percentile != null ? `${data.meta.percentile}%` : '35%'}
+                  </p>
                   <p className="text-sm text-muted-foreground">상위 랭킹</p>
                 </div>
               </CardContent>
