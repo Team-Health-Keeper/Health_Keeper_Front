@@ -197,14 +197,14 @@ export const Hero: FC<HeroProps> = ({ onGetStarted, onGoRecipes }) => {
       {/* 섹션 전체 양 끝 글로벌 내비게이션 버튼 */}
       <button
         aria-label="이전 슬라이드"
-        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/80 text-[#0074B7] shadow-sm border border-blue-100 w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:bg-white"
+        className="hidden sm:flex absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/80 text-[#0074B7] shadow-sm border border-blue-100 w-8 h-8 sm:w-9 sm:h-9 items-center justify-center hover:bg-white"
         onClick={() => setPanelIndex((prev) => (prev === 0 ? 1 : 0))}
       >
         <span aria-hidden>{"<"}</span>
       </button>
       <button
         aria-label="다음 슬라이드"
-        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/80 text-[#0074B7] shadow-sm border border-blue-100 w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:bg-white"
+        className="hidden sm:flex absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/80 text-[#0074B7] shadow-sm border border-blue-100 w-8 h-8 sm:w-9 sm:h-9 items-center justify-center hover:bg-white"
         onClick={() => setPanelIndex((prev) => (prev === 0 ? 1 : 0))}
       >
         <span aria-hidden>{">"}</span>
