@@ -24,7 +24,7 @@ function App() {
   const [loginOpen, setLoginOpen] = useState(false);
 
   // 공개 경로: 운동 레시피, 동호회 찾기, 시설 찾기, 3x3/티월 테스트
-  const publicPaths = new Set<string>(['/recipes', '/community', '/facilities', '/three-grid', '/twall', '/results']);
+  const publicPaths = new Set<string>(['/recipes', '/community', '/facilities', '/three-grid', '/twall']);
 
   useEffect(() => {
     const token = sessionStorage.getItem('authToken');
