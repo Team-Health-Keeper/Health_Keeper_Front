@@ -12,17 +12,16 @@ export interface BasicInfoFormProps {
   gender: string
   height: string
   weight: string
-  bmi: string
   ageGroup: string
   ageWarning: string | null
   showAgeMonths?: boolean
-  errors?: Partial<Record<"ageMonths"|"height"|"weight"|"waist", string | null>>
+  errors?: Partial<Record<"age"|"ageMonths"|"height"|"weight"|"waist", string | null>>
   onChange: (field: "age"|"ageMonths"|"gender"|"height"|"weight", value: string) => void
   onOpenWaistGuide: () => void
 }
 
 export function BasicInfoForm({
-  age, ageMonths, gender, height, weight, bmi,
+  age, ageMonths, gender, height, weight,
   ageGroup, ageWarning, showAgeMonths, errors,
   onChange, onOpenWaistGuide,
 }: BasicInfoFormProps) {
@@ -38,6 +37,9 @@ export function BasicInfoForm({
           <div className="space-y-2 md:col-span-1">
             <Label htmlFor="age">만 나이</Label>
             <Input id="age" type="number" placeholder="예: 30" value={age} onChange={(e) => onChange("age", e.target.value)} />
+            {errors?.age && (
+              <p className="text-xs text-destructive">{errors.age}</p>
+            )}
           </div>
           {showAgeMonths && (
             <div className="space-y-2 md:col-span-1">
@@ -91,10 +93,6 @@ export function BasicInfoForm({
             {errors?.weight && (
               <p className="text-xs text-destructive">{errors.weight}</p>
             )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bmi">BMI (kg/㎡)</Label>
-            <Input id="bmi" type="text" value={bmi} readOnly placeholder="신장/체중으로 자동 계산" />
           </div>
         </div>
         {ageWarning && (

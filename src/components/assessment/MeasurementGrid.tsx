@@ -14,7 +14,7 @@ export interface MeasurementGridProps {
   measurementCodes: MeasurementCode[]
   measurements: Record<string, string>
   currentMeasurements: Record<string, string>
-  requiredMeasurementIds: string[]
+  requiredMeasurementIds?: string[]
   autoValues: Record<string, string>
   allRequiredFilled: boolean
   errors?: Record<string, string | null>
@@ -27,11 +27,10 @@ export interface MeasurementGridProps {
 
 export function MeasurementGrid({
   headerTitle = "측정 항목",
-  headerDescription = "연령대에 해당하는 측정 항목입니다. 필수 항목은 반드시 입력해주세요.",
+  headerDescription = "연령대에 해당하는 측정 항목입니다 (모든 항목 필수)",
   measurementCodes,
   measurements,
   currentMeasurements,
-  requiredMeasurementIds,
   autoValues,
   allRequiredFilled,
   errors,
@@ -53,20 +52,20 @@ export function MeasurementGrid({
         )}
         <div className="grid gap-4 md:grid-cols-2">
           {Object.entries(currentMeasurements)
-            .filter(([id]) => !["1", "2", "18"].includes(id))
+            .filter(([id]) => !["1", "2"].includes(id))
             .map(([id, name]) => {
               const label = String(name)
-              const isRequired = requiredMeasurementIds.includes(id)
+              const isRequired = true // 모든 표시된 측정 항목은 필수
               const mc = measurementCodes.find((m) => String(m.id) === id || m.id === Number(id))
               const guideVideoRaw = mc?.guide_video || null
               const guideVideoId = guideVideoRaw ? extractYouTubeId(guideVideoRaw) : null
-              const isAutoField = ["42", "28", "52"].includes(id)
+              const isAutoField = ["42", "28", "52", "18"].includes(id)
               const autoValue = autoValues[id] || ""
               const errMsg = errors?.[id] || null
               return (
                 <div key={id} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor={`measurement-${id}`}>{label} {isRequired && <span className="text-destructive">*필수</span>}</Label>
+                    <Label htmlFor={`measurement-${id}`}>{label}</Label>
                     <div className="flex items-center gap-2">
                       {(!hasTextGuide || hasTextGuide(id)) ? (
                         <Button type="button" variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={() => onOpenTextGuide(id)} title="측정 글 가이드">
@@ -76,7 +75,7 @@ export function MeasurementGrid({
                         <span className="h-8 w-8 inline-block" aria-hidden="true" />
                       )}
                       {guideVideoId && (
-                        <Button type="button" variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={() => onOpenVideoGuide(label.replace(/\s*\*필수\s*$/, ""), guideVideoId!)} title="측정 영상 보기">
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={() => onOpenVideoGuide(label.replace(/\s*\*필수\s*$/, ""), guideVideoId)} title="측정 영상 보기">
                           <Video className="h-4 w-4" />
                         </Button>
                       )}
@@ -115,10 +114,17 @@ export function MeasurementGrid({
                     id={`measurement-${id}`}
                     type="number"
                     step="0.1"
-                    placeholder={id === "42" ? "신장/허리둘레로 자동 계산" : (id === "28" ? "절대악력/체중으로 자동 계산" : (id === "52" ? "좌/우 악력으로 자동 계산" : "값 입력"))}
-                    value={isAutoField ? autoValue : (measurements[id] || "")}
-                    onChange={(e) => !isAutoField && onChange(id, e.target.value)}
-                    readOnly={isAutoField}
+                    placeholder={(() => {
+                      if (id === "42") return "신장/허리둘레로 자동 계산"
+                      if (id === "28") return "절대악력/체중으로 자동 계산"
+                      if (id === "52") return "좌/우 악력으로 자동 계산"
+                      if (id === "18") return "신장/체중으로 자동 계산"
+                      if (id === "30") return "왕복오래달리기출력 자동 계산"
+                      return "값 입력"
+                    })()}
+                    value={(["42","28","52","18","30"].includes(id)) ? autoValue : (measurements[id] || "")}
+                    onChange={(e: any) => { if (!(["42","28","52","18","30"].includes(id))) onChange(id, e.target.value) }}
+                    readOnly={(["42","28","52","18","30"].includes(id))}
                   />
                   {errMsg && (
                     <p className="text-xs text-destructive mt-1">{errMsg}</p>

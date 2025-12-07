@@ -89,42 +89,45 @@ export function YouTubeModal({
         showCloseButton={false}
         style={{ width: contentWidth ?? "min(90vw, calc(90vh * (16/9)))", maxWidth: 1200 }}
       >
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 z-50 rounded-full bg-white/95 p-3 shadow-xl ring-1 ring-black/10 transition-all duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-          aria-label="닫기"
-        >
-          <X className="h-6 w-6 text-gray-900" />
-        </button>
-        {/* Close button removed per request */}
+        {/* Centered, smaller close button inside the header for better visual alignment */}
 
         {title && (
           <div ref={headerWrapRef}>
-            <DialogHeader className="pt-6 pl-6 pr-6 bg-background z-10">
-              <DialogTitle>{title}</DialogTitle>
-              {playlist.length > 0 && (
-                <div className="mt-1 flex items-center justify-center gap-2">
-                  <Button
-                    onClick={handlePrevious}
-                    disabled={!hasPrevious}
-                    className="h-8 w-8 p-0 rounded-full bg-white/90 text-gray-900 shadow ring-1 ring-black/10 hover:bg-white disabled:opacity-40"
-                    aria-label="이전 영상"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <p className="text-sm text-muted-foreground min-w-[56px] text-center">
-                    {currentIndex + 1} / {playlist.length}
-                  </p>
-                  <Button
-                    onClick={handleNext}
-                    disabled={!hasNext}
-                    className="h-8 w-8 p-0 rounded-full bg-white/90 text-gray-900 shadow ring-1 ring-black/10 hover:bg-white disabled:opacity-40"
-                    aria-label="다음 영상"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+            <DialogHeader className="pt-6 pl-6 pr-6 bg-background z-10 relative">
+              <div className="flex flex-col items-center justify-center relative">
+                <DialogTitle>{title}</DialogTitle>
+                {playlist.length > 0 && (
+                  <div className="mt-1 flex items-center justify-center gap-2">
+                    <Button
+                      onClick={handlePrevious}
+                      disabled={!hasPrevious}
+                      className="h-8 w-8 p-0 rounded-full bg-white/90 text-gray-900 shadow ring-1 ring-black/10 hover:bg-white disabled:opacity-40"
+                      aria-label="이전 영상"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground min-w-[56px] text-center">
+                      {currentIndex + 1} / {playlist.length}
+                    </p>
+                    <Button
+                      onClick={handleNext}
+                      disabled={!hasNext}
+                      className="h-8 w-8 p-0 rounded-full bg-white/90 text-gray-900 shadow ring-1 ring-black/10 hover:bg-white disabled:opacity-40"
+                      aria-label="다음 영상"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                <button
+                  onClick={onClose}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-50 rounded-full bg-white/95 p-1.5 shadow ring-1 ring-black/10 transition-all duration-200 hover:scale-105 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="닫기"
+                  style={{marginRight: '0'}}
+                >
+                  <X className="h-4 w-4 text-gray-900" />
+                </button>
+              </div>
             </DialogHeader>
           </div>
         )}
