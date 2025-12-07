@@ -53,7 +53,8 @@ function extractYouTubeId(input: string): string {
 
 const ageGroupMeasurements = {
   유아기: {
-    "7": "악력(kg)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
     "9": "윗몸말아올리기(회)",
     "12": "앉아윗몸앞으로굽히기(cm)",
     "20": "왕복오래달리기(회)",
@@ -63,21 +64,23 @@ const ageGroupMeasurements = {
     "51": "3×3 버튼누르기(초)",
   },
   유소년: {
-    "7": "악력(kg)",
+    "4": "허리둘레(cm)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
     "9": "윗몸말아올리기(회)",
     "12": "앉아윗몸앞으로굽히기(cm)",
     "20": "왕복오래달리기(회)",
     "22": "제자리 멀리뛰기(cm)",
     "28": "상대악력(%)",
     "42": "허리둘레-신장비(WHtR)",
-    "43": "반복옆뛰기(회)",
-    "44": "눈-손 협응력(벽패스)(초)",
   },
   청소년: {
     "3": "체지방율(%)",
+    "4": "허리둘레(cm)",
     "5": "이완기혈압_최저(mmHg)",
     "6": "수축기혈압_최고(mmHg)",
-    "7": "악력(kg)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
     "9": "윗몸말아올리기(회)",
     "10": "반복점프(회)",
     "12": "앉아윗몸앞으로굽히기(cm)",
@@ -93,9 +96,11 @@ const ageGroupMeasurements = {
   },
   성인: {
     "3": "체지방율(%)",
+    "4": "허리둘레(cm)",
     "5": "이완기혈압_최저(mmHg)",
     "6": "수축기혈압_최고(mmHg)",
-    "7": "악력(kg)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
     "12": "앉아윗몸앞으로굽히기(cm)",
     "19": "교차윗몸일으키기(회)",
     "22": "제자리 멀리뛰기(cm)",
@@ -106,9 +111,11 @@ const ageGroupMeasurements = {
   },
   어르신: {
     "3": "체지방률(%)",
+    "4": "허리둘레(cm)",
     "5": "이완기최저혈압(mmHg)",
     "6": "수축기최고혈압(mmHg)",
-    "7": "악력(kg)",
+    "7": "악력_좌(kg)",
+    "8": "악력_우(kg)",
     "12": "앉아윗몸앞으로굽히기(cm)",
     "23": "의자에앉았다일어서기(회)",
     "25": "2분제자리걷기(회)",
@@ -121,8 +128,12 @@ const ageGroupMeasurements = {
 
 const requiredMeasurementIds = [
   "7",
+  "4",
+  "8",
   "28",
-  // "52", // keep if still needed; otherwise computed from 7 only or removed
+  "50",
+  "51",
+  "52", 
   "9",
   "12",
   "19",
@@ -141,8 +152,6 @@ const requiredMeasurementIds = [
   "17",
   "26",
   "27",
-  "43",
-  "44",
 ]
 
 export default function AssessmentPage() {
@@ -163,7 +172,6 @@ export default function AssessmentPage() {
   const [gender, setGender] = useState("")
   const [height, setHeight] = useState("")
   const [weight, setWeight] = useState("")
-  const [waist, setWaist] = useState("")
   const [bmi, setBmi] = useState("")
 
   const [ageGroup, setAgeGroup] = useState<string>("")
@@ -179,18 +187,20 @@ export default function AssessmentPage() {
   
   // Group-specific measurement validation rules
   type GroupName = '유아기' | '유소년' | '청소년' | '성인' | '어르신'
-  const GROUP_MEAS_RULES: Partial<Record<GroupName, Record<string, { min: number; max: number; note?: string }>>> = {
+  const GROUP_MEAS_RULES: Partial<Record<GroupName, Record<string, { min: number; max: number; }>>> = {
     유아기: {
-      "7": { min: 0, max: 30, note: "유아기 악력은 보통 0–30kg 범위입니다" },
-      "9": { min: 0, max: 100, note: "반복 횟수는 0–100회 이내로 입력해주세요" },
-      "12": { min: -30, max: 60, note: "앉아윗몸앞으로굽히기는 -30–60cm 범위가 일반적입니다" },
-      "20": { min: 0, max: 100, note: "왕복오래달리기는 0–100회 이내가 일반적입니다" },
-      "22": { min: 10, max: 300, note: "제자리 멀리뛰기는 10–300cm 범위가 일반적입니다" },
-      "50": { min: 2, max: 120, note: "시간은 2–120초 범위가 일반적입니다" },
-      "51": { min: 1, max: 180, note: "시간은 1–180초 범위가 일반적입니다" },
+      "7": { min: 0, max: 30 },
+      "8": { min: 0, max: 30 },
+      "9": { min: 0, max: 100 },
+      "12": { min: -30, max: 60 },
+      "20": { min: 0, max: 100 },
+      "22": { min: 10, max: 300 },
+      "50": { min: 2, max: 120 },
+      "51": { min: 1, max: 180 },
     },
     유소년: {
       "7": { min: 0, max: 60 },
+      "8": { min: 0, max: 60 },
       "9": { min: 0, max: 200 },
       "12": { min: -30, max: 80 },
       "20": { min: 0, max: 150 },
@@ -203,6 +213,7 @@ export default function AssessmentPage() {
       "5": { min: 40, max: 130 },
       "6": { min: 70, max: 220 },
       "7": { min: 0, max: 80 },
+      "8": { min: 0, max: 80 },
       "9": { min: 0, max: 200 },
       "10": { min: 0, max: 300 },
       "12": { min: -30, max: 80 },
@@ -242,20 +253,20 @@ export default function AssessmentPage() {
   }
 
   // Basic info plausible ranges per group
-  const BASIC_RULES: Partial<Record<GroupName, { height: [number, number]; weight: [number, number]; waist: [number, number]; }>> = {
-    유아기: { height: [90, 130], weight: [10, 35], waist: [40, 70] },
-    유소년: { height: [110, 170], weight: [18, 70], waist: [45, 85] },
-    청소년: { height: [140, 200], weight: [35, 120], waist: [50, 110] },
-    성인:   { height: [140, 210], weight: [35, 200], waist: [50, 140] },
-    어르신: { height: [130, 200], weight: [35, 150], waist: [50, 140] },
+  const BASIC_RULES: Partial<Record<GroupName, { height: [number, number]; weight: [number, number]; waist?: [number, number]; }>> = {
+    유아기: { height: [90, 130], weight: [10, 35] },
+    유소년: { height: [110, 170], weight: [18, 70], waist: [40, 100] },
+    청소년: { height: [140, 200], weight: [35, 120], waist: [40, 100] },
+    성인:   { height: [140, 210], weight: [35, 200], waist: [40, 100] },
+    어르신: { height: [130, 200], weight: [35, 150], waist: [40, 100] },
   }
 
-  const validateBasicForGroup = (group: string, next?: { height?: string; weight?: string; waist?: string; ageMonths?: string }) => {
+  const validateBasicForGroup = (group: string, next?: { height?: string; weight?: string; ageMonths?: string; waist?: string }) => {
     const rules = BASIC_RULES[group as GroupName]
     const errs: Partial<Record<"ageMonths"|"height"|"weight"|"waist", string | null>> = {}
     const h = Number.parseFloat(next?.height ?? height)
     const w = Number.parseFloat(next?.weight ?? weight)
-    const wa = Number.parseFloat(next?.waist ?? waist)
+    const wa = Number.parseFloat(next?.waist ?? measurementValues["4"] ?? "")
     if (rules) {
       if (Number.isFinite(h)) {
         const [minH, maxH] = rules.height
@@ -265,9 +276,12 @@ export default function AssessmentPage() {
         const [minW, maxW] = rules.weight
         errs.weight = (w < minW || w > maxW) ? `체중은 보통 ${minW}–${maxW}kg 범위입니다` : null
       }
-      if (Number.isFinite(wa)) {
+      if (Number.isFinite(wa) && rules.waist) {
         const [minWa, maxWa] = rules.waist
         errs.waist = (wa < minWa || wa > maxWa) ? `허리둘레는 보통 ${minWa}–${maxWa}cm 범위입니다` : null
+      } else {
+        // If there's no waist rule (e.g. 유아기), clear any waist error
+        errs.waist = null
       }
     }
     // ageMonths only for infant
@@ -390,7 +404,7 @@ export default function AssessmentPage() {
   // Auto-calculate WHtR (허리둘레-신장비, id "42") from waist(cm) and height(cm)
   useEffect(() => {
     const h = Number.parseFloat(height)
-    const wa = Number.parseFloat(waist)
+    const wa = Number.parseFloat(measurementValues["4"] || "")
     setMeasurementValues((prev) => {
       const next = { ...prev }
       if (h > 0 && wa > 0) {
@@ -402,15 +416,20 @@ export default function AssessmentPage() {
       }
       return next
     })
-  }, [height, waist])
+  }, [height, measurementValues["4"]])
 
-  // Auto-calculate 절대악력(kg, id "52") from 단일 악력(7)
+  // Auto-calculate 절대악력(kg, id "52") from 좌/우 악력(7/8)
+  // Use the larger of left/right when available
   useEffect(() => {
-    const grip = Number.parseFloat(measurementValues["7"] || "")
+    const left = Number.parseFloat(measurementValues["7"] || "")
+    const right = Number.parseFloat(measurementValues["8"] || "")
+    const hasLeft = !Number.isNaN(left) && left > 0
+    const hasRight = !Number.isNaN(right) && right > 0
     setMeasurementValues((prev) => {
       const next = { ...prev }
-      if (!Number.isNaN(grip) && grip > 0) {
-        const formatted = grip.toFixed(1)
+      if (hasLeft || hasRight) {
+        const absGrip = Math.max(hasLeft ? left : 0, hasRight ? right : 0)
+        const formatted = absGrip.toFixed(1)
         if (next["52"] !== formatted) next["52"] = formatted
       } else {
         if (Object.prototype.hasOwnProperty.call(next, "52")) {
@@ -419,7 +438,7 @@ export default function AssessmentPage() {
       }
       return next
     })
-  }, [measurementValues["7"]])
+  }, [measurementValues["7"], measurementValues["8"]])
 
   // Auto-calculate 상대악력(%, id "28") = 절대악력(kg, id "52") / 체중(kg) * 100
   useEffect(() => {
@@ -441,7 +460,8 @@ export default function AssessmentPage() {
   }, [measurementValues["52"], weight])
 
   useEffect(() => {
-    const isBasicInfoComplete = !!(age && gender && height && weight && waist)
+    // 기본 정보는 이제 허리둘레 제외 (허리둘레는 측정 항목으로 이동)
+    const isBasicInfoComplete = !!(age && gender && height && weight)
     setShowMeasurements(isBasicInfoComplete)
 
     if (!isBasicInfoComplete) {
@@ -449,12 +469,12 @@ export default function AssessmentPage() {
     }
     // Re-run group validation when basics change
     validateBasicForGroup(ageGroup)
-  }, [age, gender, height, weight, waist])
+  }, [age, gender, height, weight, ageGroup])
 
   const currentMeasurements = ageGroup ? ageGroupMeasurements[ageGroup as keyof typeof ageGroupMeasurements] : {}
   const requiredIdsForGroup = Object.keys(currentMeasurements)
-    .filter((id) => !["1", "2", "4", "18"].includes(id))
-    .filter((id) => requiredMeasurementIds.includes(id))
+    .filter((id) => !["1", "2", "18"].includes(id))
+    .filter((id) => requiredMeasurementIds.includes(id) || (ageGroup === '유소년' && id === '42'))
   const allRequiredFilled = requiredIdsForGroup.every((id) => {
     const v = measurementValues[id]
     return typeof v === "string" && v.trim() !== ""
@@ -470,7 +490,10 @@ export default function AssessmentPage() {
     } else {
       const groupRules = GROUP_MEAS_RULES[ageGroup as GroupName] || {}
       if (groupRules[id]) {
-        const { min, max, note } = groupRules[id]
+        const rule = groupRules[id] as any
+        const min = rule.min as number
+        const max = rule.max as number
+        const note = rule.note as string | undefined
         const ok = v >= min && v <= max
         setMeasurementErrors((prev) => ({ ...prev, [id]: ok ? null : (note || `값의 허용 범위는 ${min}–${max} 입니다`) }))
       } else {
@@ -519,11 +542,6 @@ export default function AssessmentPage() {
         if (weight) {
           const w = Number.parseFloat(weight)
           if (!Number.isNaN(w)) req_arr.push({ measure_key: 2, measure_value: w })
-        }
-
-        if (waist) {
-          const wa = Number.parseFloat(waist)
-          if (!Number.isNaN(wa)) req_arr.push({ measure_key: 4, measure_value: wa })
         }
         if (bmi) {
           const b = Number.parseFloat(bmi)
@@ -647,7 +665,6 @@ export default function AssessmentPage() {
             gender={gender}
             height={height}
             weight={weight}
-            waist={waist}
             bmi={bmi}
             ageGroup={ageGroup}
             ageWarning={ageWarning}
@@ -659,7 +676,6 @@ export default function AssessmentPage() {
               else if (field === 'gender') setGender(value)
               else if (field === 'height') { setHeight(value); validateBasicForGroup(ageGroup, { height: value }) }
               else if (field === 'weight') { setWeight(value); validateBasicForGroup(ageGroup, { weight: value }) }
-              else if (field === 'waist') { setWaist(value); validateBasicForGroup(ageGroup, { waist: value }) }
             }}
             onOpenWaistGuide={() => setGuideKey('waist')}
           />
@@ -674,7 +690,7 @@ export default function AssessmentPage() {
               autoValues={{
                 "42": (() => {
                   const h = Number.parseFloat(height)
-                  const wa = Number.parseFloat(waist)
+                  const wa = Number.parseFloat(measurementValues["4"] || "")
                   return h > 0 && wa > 0 ? (wa / h).toFixed(3) : ""
                 })(),
                 "28": (() => {

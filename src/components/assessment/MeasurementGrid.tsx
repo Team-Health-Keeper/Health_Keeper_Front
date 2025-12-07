@@ -53,7 +53,7 @@ export function MeasurementGrid({
         )}
         <div className="grid gap-4 md:grid-cols-2">
           {Object.entries(currentMeasurements)
-            .filter(([id]) => !["1", "2", "4", "18"].includes(id))
+            .filter(([id]) => !["1", "2", "18"].includes(id))
             .map(([id, name]) => {
               const label = String(name)
               const isRequired = requiredMeasurementIds.includes(id)

@@ -12,18 +12,17 @@ export interface BasicInfoFormProps {
   gender: string
   height: string
   weight: string
-  waist: string
   bmi: string
   ageGroup: string
   ageWarning: string | null
   showAgeMonths?: boolean
   errors?: Partial<Record<"ageMonths"|"height"|"weight"|"waist", string | null>>
-  onChange: (field: "age"|"ageMonths"|"gender"|"height"|"weight"|"waist", value: string) => void
+  onChange: (field: "age"|"ageMonths"|"gender"|"height"|"weight", value: string) => void
   onOpenWaistGuide: () => void
 }
 
 export function BasicInfoForm({
-  age, ageMonths, gender, height, weight, waist, bmi,
+  age, ageMonths, gender, height, weight, bmi,
   ageGroup, ageWarning, showAgeMonths, errors,
   onChange, onOpenWaistGuide,
 }: BasicInfoFormProps) {
@@ -91,18 +90,6 @@ export function BasicInfoForm({
             <Input id="weight" type="number" step="0.1" placeholder="예: 65.5" value={weight} onChange={(e) => onChange("weight", e.target.value)} />
             {errors?.weight && (
               <p className="text-xs text-destructive">{errors.weight}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="waist">허리둘레 (cm)</Label>
-            <div className="flex items-center gap-2">
-              <Input id="waist" type="number" step="0.1" placeholder="예: 80.0" value={waist} onChange={(e) => onChange("waist", e.target.value)} />
-              <Button type="button" variant="outline" size="icon" className="h-9 w-9 bg-transparent" onClick={onOpenWaistGuide} title="허리둘레 측정 가이드">
-                <BookOpen className="h-4 w-4" />
-              </Button>
-            </div>
-            {errors?.waist && (
-              <p className="text-xs text-destructive">{errors.waist}</p>
             )}
           </div>
           <div className="space-y-2">
