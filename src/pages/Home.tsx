@@ -13,51 +13,22 @@ import { HowItWorks } from "@/components/home/HowItWorks"
 import { Features } from "@/components/home/Features"
 import { RecipePreview } from "@/components/home/RecipePreview"
 import { StartCTA } from "@/components/home/StartCTA"
-import { isAuthenticated } from "@/lib/auth"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function Home() {
   const navigate = useNavigate()
   const [loginModalOpen, setLoginModalOpen] = useState(false)
-  const [user, setUser] = useState<{ name: string } | null>(null)
-  const [showLogoutNotice, setShowLogoutNotice] = useState(false)
-  const [logoutNoticeLeaving, setLogoutNoticeLeaving] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
+  const {
+    user,
+    isAuthenticated,
+    showLogoutNotice,
+    logoutNoticeLeaving,
+    login,
+    logout,
+    setShowLogoutNotice,
+  } = useAuth();
 
-  useEffect(() => {
-    const token = sessionStorage.getItem("authToken")
-    const storedUser = sessionStorage.getItem("user")
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser))
-    } else if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-    // show one-time logout notice
-    const justLoggedOut = sessionStorage.getItem("justLoggedOut")
-    if (justLoggedOut) {
-      sessionStorage.removeItem("justLoggedOut")
-      setShowLogoutNotice(true)
-    }
-    // also react to runtime logout event without navigation
-    const onJustLoggedOut = () => {
-      setShowLogoutNotice(true)
-    }
-    window.addEventListener('justLoggedOut', onJustLoggedOut)
-    return () => {
-      window.removeEventListener('justLoggedOut', onJustLoggedOut)
-    }
-  }, [])
-
-  // Auto-dismiss with smooth fade-out (StrictMode-safe): show -> start leaving -> unmount
-  useEffect(() => {
-    if (!showLogoutNotice) return
-    setLogoutNoticeLeaving(false)
-    const t1 = setTimeout(() => setLogoutNoticeLeaving(true), 2000)
-    const t2 = setTimeout(() => setShowLogoutNotice(false), 2600) // match CSS duration ~300-600ms
-    return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-    }
-  }, [showLogoutNotice])
 
   // Show back-to-top button after scrolling down a bit
   useEffect(() => {
@@ -94,32 +65,27 @@ export default function Home() {
   }, [])
 
   const handleLoginSuccess = (loginData: { provider: string; name: string }) => {
-    const userData = { name: loginData.name }
-    setUser(userData)
-    sessionStorage.setItem("user", JSON.stringify(userData))
-    setLoginModalOpen(false)
-    navigate("/my")
+    login(loginData);
+    setLoginModalOpen(false);
   }
 
   const handleLogout = () => {
-    sessionStorage.removeItem("user")
-    setUser(null)
-    navigate("/")
+    logout();
   }
 
   const handleGetStarted = () => {
-    if (isAuthenticated()) {
-      navigate("/assessment")
+    if (isAuthenticated) {
+      navigate("/assessment");
     } else {
-      setLoginModalOpen(true)
+      setLoginModalOpen(true);
     }
   }
 
   const handleGoRecipes = () => {
-    if (isAuthenticated()) {
-      navigate('/recipes')
+    if (isAuthenticated) {
+      navigate('/recipes');
     } else {
-      setLoginModalOpen(true)
+      setLoginModalOpen(true);
     }
   }
 
