@@ -18,6 +18,7 @@ import { HeroSection } from "@/components/common/HeroSection"
 import { LoginModal } from "@/components/login-modal"
 import { useAuth } from "@/hooks/useAuth"
 
+export default function RecipesPage() {
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const { isAuthenticated, login } = useAuth();
   useEffect(() => {
