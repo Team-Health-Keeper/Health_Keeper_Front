@@ -22,11 +22,6 @@ export default function RecipesPage() {
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const { isAuthenticated, login } = useAuth();
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLoginModalOpen(true)
-    }
-  }, [isAuthenticated])
-  useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
@@ -93,21 +88,7 @@ export default function RecipesPage() {
     }
   }, [page, limit, search, forMe])
 
-  if (loginModalOpen && !isAuthenticated) {
-    return (
-      <>
-        <SiteHeader />
-        <LoginModal
-          isOpen={loginModalOpen}
-          onClose={() => setLoginModalOpen(false)}
-          onLoginSuccess={(data) => {
-            login(data);
-            setLoginModalOpen(false);
-          }}
-        />
-      </>
-    )
-  }
+  // /recipes는 로그인 모달 없이 바로 접근 가능
 
   return (
     <div className="min-h-screen bg-background">
