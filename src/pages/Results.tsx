@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
+import { useAuth } from "@/hooks/useAuth"
+import { LoginModal } from "@/components/login-modal"
 import { SiteHeader } from "@/components/site-header"
 import { HeroSection } from "@/components/common/HeroSection"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Award, TrendingUp, Activity, ArrowRight, BookOpen } from "lucide-react"
+import { Award, TrendingUp, Activity, BookOpen } from "lucide-react"
 import { YouTubeModal } from "@/components/youtube-modal"
 import { RecipeMetaHeader } from "@/components/recipe/RecipeMetaHeader"
 import { GradeResultCard } from "@/components/recipe/GradeResultCard"
@@ -15,8 +16,8 @@ import { ExerciseVideoCard, ExerciseCommon } from "@/components/recipe/ExerciseV
 import { ExercisePhaseSection } from "@/components/recipe/ExercisePhaseSection"
 
 interface StrengthWeakness {
-  category: string
-  level: string
+  category: string;
+  level: string;
 }
 
 interface MappedRecipe {
@@ -81,25 +82,22 @@ function extractVideoId(urlStr: string | undefined | null): string {
   }
 }
 
+
 function mapAnalysis(raw: any): MappedRecipe | null {
-  if (!raw || typeof raw !== 'object') return null
-  // Many APIs wrap payloads: try common containers
-  const payload = raw?.data ?? raw?.result ?? raw
+  if (!raw || typeof raw !== 'object') return null;
+  const payload = raw?.data ?? raw?.result ?? raw;
   const percentileCandidate = [
     payload.fitness_percentile,
     payload.grade_percentile,
     payload.percentile,
     payload.fitnessPercentile,
-  ].find(v => typeof v === 'number' && v >= 0 && v <= 100) ?? null
-  
-  // strengths와 weaknesses 추출
-  const strengths = payload.strengths || []
-  const weaknesses = payload.weaknesses || []
-
+  ].find((v) => typeof v === 'number' && v >= 0 && v <= 100) ?? null;
+  const strengths = payload.strengths || [];
+  const weaknesses = payload.weaknesses || [];
   const mapArray = (arr: any): ExerciseCommon[] => {
-    if (!Array.isArray(arr)) return []
+    if (!Array.isArray(arr)) return [];
     return arr.map((c: any): ExerciseCommon => {
-      const videoId = extractVideoId(c.video_url)
+      const videoId = extractVideoId(c.video_url);
       return {
         name: c.name || c.exercise_name || '운동',
         description: c.description || c.summary || '설명이 제공되지 않았습니다.',
@@ -110,10 +108,9 @@ function mapAnalysis(raw: any): MappedRecipe | null {
         equipment: c.equipment || null,
         bodyPart: c.body_part || c.bodyPart || null,
         targetAge: c.target_age || null,
-      }
-    })
-  }
-
+      };
+    });
+  };
   return {
     meta: {
       title: payload.recipe_title || '맞춤 운동 레시피',
@@ -134,47 +131,52 @@ function mapAnalysis(raw: any): MappedRecipe | null {
     cooldown: mapArray(
       payload.cooldown_exercises || payload.cooldown || payload.cool_down_card_list || []
     ),
-  }
+  };
 }
 
 export default function Results() {
-  const [analysis, setAnalysis] = useState<MappedRecipe | null>(null)
-  const [selectedVideo, setSelectedVideo] = useState<ExerciseCommon | null>(null)
+  const [analysis, setAnalysis] = useState<MappedRecipe | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<ExerciseCommon | null>(null);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const { isAuthenticated, login } = useAuth();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     try {
-      // 1) Primary: sessionStorage (same-origin only)
-      const stored = typeof window !== 'undefined' ? sessionStorage.getItem('analysisResult') : null
+      const stored = typeof window !== 'undefined' ? sessionStorage.getItem('analysisResult') : null;
       if (stored) {
-        const raw = JSON.parse(stored)
-        const mapped = mapAnalysis(raw)
-        if (mapped) { setAnalysis(mapped); return }
+        const raw = JSON.parse(stored);
+        const mapped = mapAnalysis(raw);
+        if (mapped) { setAnalysis(mapped); return; }
       }
-      // 2) Fallback: localStorage (survives reload; optional)
-      const ls = typeof window !== 'undefined' ? localStorage.getItem('analysisResult') : null
+      const ls = typeof window !== 'undefined' ? localStorage.getItem('analysisResult') : null;
       if (ls) {
-        const raw = JSON.parse(ls)
-        const mapped = mapAnalysis(raw)
-        if (mapped) { setAnalysis(mapped); return }
+        const raw = JSON.parse(ls);
+        const mapped = mapAnalysis(raw);
+        if (mapped) { setAnalysis(mapped); return; }
       }
-      // 3) Fallback: query param ?analysis=<base64 or URI encoded JSON>
-      const sp = new URLSearchParams(window.location.search)
-      const qp = sp.get('analysis')
+      const sp = new URLSearchParams(window.location.search);
+      const qp = sp.get('analysis');
       if (qp) {
         try {
-          const decoded = decodeURIComponent(qp)
-          const raw = JSON.parse(decoded)
-          const mapped = mapAnalysis(raw)
-          if (mapped) { setAnalysis(mapped); return }
+          const decoded = decodeURIComponent(qp);
+          const raw = JSON.parse(decoded);
+          const mapped = mapAnalysis(raw);
+          if (mapped) { setAnalysis(mapped); return; }
         } catch {}
       }
     } catch (e) {
-      console.error('Failed to load analysisResult', e)
+      console.error('Failed to load analysisResult', e);
     }
-  }, [])
+  }, [isAuthenticated]);
 
-  // Fallback content if no analysis present
-  const fallback: MappedRecipe = {
+  const getFallback = (): MappedRecipe => ({
     meta: {
       title: '기초 유연성 향상 프로그램',
       intro: '전신 유연성을 단계적으로 향상시키는 스트레칭 루틴입니다.',
@@ -194,10 +196,26 @@ export default function Results() {
     warmup: [],
     main: [],
     cooldown: [],
-  }
+  });
 
-  const data = analysis || fallback
-  const allExercises = [...data.warmup, ...data.main, ...data.cooldown]
+  const data = analysis || getFallback();
+  const allExercises = [...data.warmup, ...data.main, ...data.cooldown];
+
+  if (loginModalOpen && !isAuthenticated) {
+    return (
+      <>
+        <SiteHeader />
+        <LoginModal
+          isOpen={loginModalOpen}
+          onClose={() => setLoginModalOpen(false)}
+          onLoginSuccess={(data) => {
+            login(data);
+            setLoginModalOpen(false);
+          }}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -354,5 +372,5 @@ export default function Results() {
         />
       )}
     </div>
-  )
+  );
 }
