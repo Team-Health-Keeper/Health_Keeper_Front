@@ -16,15 +16,15 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HeroSection } from "@/components/common/HeroSection"
 import { LoginModal } from "@/components/login-modal"
-import { isAuthenticated } from "@/lib/auth"
+import { useAuth } from "@/hooks/useAuth"
 
-export default function RecipesPage() {
   const [loginModalOpen, setLoginModalOpen] = useState(false)
+  const { isAuthenticated, login } = useAuth();
   useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
       setLoginModalOpen(true)
     }
-  }, [])
+  }, [isAuthenticated])
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
@@ -92,18 +92,16 @@ export default function RecipesPage() {
     }
   }, [page, limit, search, forMe])
 
-  if (loginModalOpen && !isAuthenticated()) {
+  if (loginModalOpen && !isAuthenticated) {
     return (
       <>
         <SiteHeader />
         <LoginModal
           isOpen={loginModalOpen}
-          onClose={() => {
-            setLoginModalOpen(false)
-            window.history.back()
-          }}
-          onLoginSuccess={() => {
-            setLoginModalOpen(false)
+          onClose={() => setLoginModalOpen(false)}
+          onLoginSuccess={(data) => {
+            login(data);
+            setLoginModalOpen(false);
           }}
         />
       </>
