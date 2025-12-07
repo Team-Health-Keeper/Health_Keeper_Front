@@ -12,6 +12,7 @@ declare global {
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { getApiBase, apiFetch } from "@/lib/utils"
+import { haversineKm, formatZip } from "@/utils/facilities"
 import { HeroSection } from "@/components/common/HeroSection"
 import { FiltersBar as FacilitiesFiltersBar } from "@/components/facilities/FiltersBar"
 import { MapPane } from "@/components/facilities/MapPane"
@@ -296,26 +297,7 @@ export default function FacilitiesPage() {
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
-  const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const toRad = (v: number) => (v * Math.PI) / 180
-    const R = 6371
-    const dLat = toRad(lat2 - lat1)
-    const dLon = toRad(lon2 - lon1)
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
-  }
-
-  // 우편번호 형식 정리: "21674.0" → "21674"
-  const formatZip = (zip?: string | null): string | null => {
-    if (!zip) return null
-    const z = String(zip).trim()
-    const m = z.match(/^(\d+)(?:\.0+)?$/)
-    return m ? m[1] : z
-  }
+  // 거리/우편번호 포맷 유틸은 utils/facilities.ts에서 import
 
   const fetchFacilities = async (_targetPage: number, _append: boolean) => {
     try {
