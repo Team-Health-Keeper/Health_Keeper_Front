@@ -82,11 +82,7 @@ export default function Home() {
   }
 
   const handleGoRecipes = () => {
-    if (isAuthenticated) {
-      navigate('/recipes');
-    } else {
-      setLoginModalOpen(true);
-    }
+    navigate('/recipes'); // 로그인 여부와 무관하게 바로 이동
   }
 
   return (
