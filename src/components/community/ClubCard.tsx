@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Users, TrendingUp } from "lucide-react";
-import { FC, memo } from "react";
+import { FC } from "react";
+import { parseFoundedDate, yearsOfOperation, formatMemberCount } from "@/utils/community";
 
 export interface Club {
   id: number;
@@ -19,46 +20,17 @@ export interface Club {
 
 interface ClubCardProps {
   club: Club;
-  formatFoundedDate: (val: string) => string;
-  formatMemberCount: (val: number | string) => number | string;
 }
 
-export const ClubCard: FC<ClubCardProps> = memo(({ club, formatFoundedDate, formatMemberCount }) => {
+export const ClubCard: FC<ClubCardProps> = ({ club }) => {
   const locationName = club.sidoName === '세종특별자치시' ? club.sidoName : club.sigunguName;
-  const parseFoundedDate = (dateStr: string) => {
-    if (!dateStr) return null;
-    // Try native parse first
-    const direct = new Date(dateStr);
-    if (!isNaN(direct.getTime())) return direct;
-    // Normalize common formats: YYYY.MM.DD, YYYY/MM/DD, YYYY-MM-DD, YYYYMMDD
-    const digits = (dateStr.match(/\d/g) || []).join("");
-    if (digits.length >= 4) {
-      const y = Number(digits.slice(0, 4));
-      const m = digits.length >= 6 ? Number(digits.slice(4, 6)) : 1;
-      const d = digits.length >= 8 ? Number(digits.slice(6, 8)) : 1;
-      const dt = new Date(y, Math.max(0, m - 1), Math.max(1, d));
-      if (!isNaN(dt.getTime())) return dt;
-    }
-    return null;
-  };
-  const yearsOfOperation = (dateStr: string) => {
-    const founded = parseFoundedDate(dateStr);
-    if (!founded) return "-";
-    const today = new Date();
-    let years = today.getFullYear() - founded.getFullYear();
-    const beforeAnniversary =
-      today.getMonth() < founded.getMonth() ||
-      (today.getMonth() === founded.getMonth() && today.getDate() < founded.getDate());
-    if (beforeAnniversary) years -= 1;
-    return years < 0 ? "-" : `${years}년차`;
-  };
-  const naverSearchUrl = (q: string) => `https://search.naver.com/search.naver?query=${encodeURIComponent(q)}`
+  const naverSearchUrl = (q: string) => `https://search.naver.com/search.naver?query=${encodeURIComponent(q)}`;
   const openSearch = () => {
-    const query = `${club.clubName} ${club.itemName} 동호회`
+    const query = `${club.clubName} ${club.itemName} 동호회`;
     if (typeof window !== 'undefined') {
-      window.open(naverSearchUrl(query), '_blank', 'noopener,noreferrer')
+      window.open(naverSearchUrl(query), '_blank', 'noopener,noreferrer');
     }
-  }
+  };
   return (
     <Card
       className="group overflow-hidden rounded-2xl border-2 transition-all hover:border-[#0074B7] hover:shadow-xl py-0 cursor-pointer"
@@ -77,7 +49,7 @@ export const ClubCard: FC<ClubCardProps> = memo(({ club, formatFoundedDate, form
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Calendar className="h-4 w-4 text-gray-400" aria-hidden="true" />
-          설립일자: {formatFoundedDate(club.foundedDate)}
+          설립일자: {club.foundedDate}
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <TrendingUp className="h-4 w-4 text-gray-400" aria-hidden="true" />
@@ -100,6 +72,6 @@ export const ClubCard: FC<ClubCardProps> = memo(({ club, formatFoundedDate, form
       </CardContent>
     </Card>
   );
-});
+};
 
 ClubCard.displayName = "ClubCard";

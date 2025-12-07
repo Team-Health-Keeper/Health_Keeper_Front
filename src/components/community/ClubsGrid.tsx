@@ -9,8 +9,7 @@ interface ClubsGridProps {
   error: string | null;
   hasNextPage: boolean;
   observerRef: RefObject<HTMLDivElement | null> | React.MutableRefObject<HTMLDivElement | null>;
-  formatFoundedDate: (val: string) => string;
-  formatMemberCount: (val: number | string) => number | string;
+  // ...existing code...
 }
 
 export const ClubsGrid: FC<ClubsGridProps> = ({
@@ -19,8 +18,6 @@ export const ClubsGrid: FC<ClubsGridProps> = ({
   error,
   hasNextPage,
   observerRef,
-  formatFoundedDate,
-  formatMemberCount,
 }) => {
   return (
     <section className="bg-gray-50 py-16">
@@ -33,8 +30,6 @@ export const ClubsGrid: FC<ClubsGridProps> = ({
             <ClubCard
               key={`${club.id}-${index}`}
               club={club}
-              formatFoundedDate={formatFoundedDate}
-              formatMemberCount={formatMemberCount}
             />
           ))}
         </div>
