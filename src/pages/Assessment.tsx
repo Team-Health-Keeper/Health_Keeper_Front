@@ -16,7 +16,9 @@ import { HeroSection } from "@/components/common/HeroSection"
 import { BasicInfoForm } from "@/components/assessment/BasicInfoForm"
 import { MeasurementGrid } from "@/components/assessment/MeasurementGrid"
 import { AnalyzeOverlay } from "@/components/assessment/AnalyzeOverlay"
+
 import { getApiBase, apiFetch } from "@/lib/utils"
+import { useAutoMeasurements } from "@/hooks/useAutoMeasurements"
 
 interface MeasurementCode {
   id: number
@@ -363,128 +365,14 @@ export default function AssessmentPage() {
     }
   }, [ageGroup])
 
-  // 허리둘레(cm)와 신장(cm)으로 WHtR(id "42") 자동 계산
-  useEffect(() => {
-    const h = Number.parseFloat(height)
-    const wa = Number.parseFloat(measurementValues["4"] || "")
-    setMeasurementValues((prev) => {
-      const next = { ...prev }
-      if (h > 0 && wa > 0) {
-        next["42"] = (wa / h).toFixed(3)
-      } else {
-        if (Object.prototype.hasOwnProperty.call(next, "42")) {
-          delete next["42"]
-        }
-      }
-      return next
-    })
-  }, [height, measurementValues["4"]])
 
-  // 신장/체중으로 BMI(id "18") 자동 계산해서 measurementValues에 채움
-  useEffect(() => {
-    const h = Number.parseFloat(height)
-    const w = Number.parseFloat(weight)
-    setMeasurementValues((prev) => {
-      const next = { ...prev }
-      if (h > 0 && w > 0) {
-        const bmi = (w / Math.pow(h / 100, 2))
-        const formatted = Number.isFinite(bmi) ? bmi.toFixed(1) : ""
-        if (next["18"] !== formatted) next["18"] = formatted
-      } else {
-        if (Object.prototype.hasOwnProperty.call(next, "18")) delete next["18"]
-      }
-      return next
-    })
-  }, [height, weight])
-
-  // 좌/우 악력(7/8)에서 절대악력(kg, id "52") 자동 계산
-  // 좌/우 중 큰 값을 사용
-  useEffect(() => {
-    const left = Number.parseFloat(measurementValues["7"] || "")
-    const right = Number.parseFloat(measurementValues["8"] || "")
-    const hasLeft = !Number.isNaN(left) && left > 0
-    const hasRight = !Number.isNaN(right) && right > 0
-    setMeasurementValues((prev) => {
-      const next = { ...prev }
-      if (hasLeft || hasRight) {
-        const absGrip = Math.max(hasLeft ? left : 0, hasRight ? right : 0)
-        const formatted = absGrip.toFixed(1)
-        if (next["52"] !== formatted) next["52"] = formatted
-      } else {
-        if (Object.prototype.hasOwnProperty.call(next, "52")) {
-          delete next["52"]
-        }
-      }
-      return next
-    })
-  }, [measurementValues["7"], measurementValues["8"]])
-
-  // 상대악력(%, id "28") = 절대악력(kg, id "52") / 체중(kg) * 100 자동 계산
-  useEffect(() => {
-    const absGrip = Number.parseFloat(measurementValues["52"] || "")
-    const w = Number.parseFloat(weight)
-    setMeasurementValues((prev) => {
-      const next = { ...prev }
-      if (absGrip > 0 && w > 0) {
-        next["28"] = ((absGrip / w) * 100).toFixed(1)
-      } else {
-        // 계산 불가능할 때 사용자가 입력한 28 값을 강제로 제거하지 않음 — 이전에 우리가 설정한 경우에만 제거
-        // 입력이 유효하지 않으면 보수적으로 제거함
-        if (Object.prototype.hasOwnProperty.call(next, "28")) {
-          delete next["28"]
-        }
-      }
-      return next
-    })
-  }, [measurementValues["52"], weight])
-
-  // 왕복오래달리기 출력(VO₂max, id "30")를 왕복횟수(id "20")와 나이로 자동 계산
-  // 접근: 총 왕복 횟수를 최종 달리기 속도(km/h)로 근사 변환
-  // 표준 20m 왕복달리기 프로그레션을 사용 (레벨1은 8.0 km/h부터 시작, 레벨당 +0.5 km/h)
-  // 레벨1은 7회, 이후 레벨은 일반적으로 8회씩 진행하므로 총 횟수를
-  // 각 레벨 내의 분수 위치로 변환하여 속도를 보간한 뒤 Léger 공식을 적용합니다:
-  // VO2 = 5.857 * v - 19.458  (v는 km/h)
-  const shuttleCountToSpeed = (count: number) => {
-    if (!Number.isFinite(count) || count <= 0) return 0
-    // 레벨1은 7회, 이후 레벨은 8회
-    let remaining = count
-    let level = 1
-    const firstLevelShuttles = 7
-    if (remaining <= firstLevelShuttles) {
-      const pos = remaining // 1..7
-      const frac = (pos - 1) / firstLevelShuttles
-      return 8.0 + frac * 0.5
-    }
-    remaining -= firstLevelShuttles
-    level = 2
-    const perLevel = 8
-    while (remaining > perLevel) {
-      remaining -= perLevel
-      level += 1
-      // 무한 루프를 방지하기 위한 안전 상한
-      if (level > 50) break
-    }
-    const posInLevel = Math.max(1, remaining) // 1..8
-    const baseSpeed = 8.0 + (level - 1) * 0.5
-    const frac = (posInLevel - 1) / perLevel
-    return baseSpeed + frac * 0.5
-  }
-
-  useEffect(() => {
-    const count = Number.parseInt(measurementValues["20"] || "")
-    const ageNum = Number.parseInt(age)
-    const v = shuttleCountToSpeed(Number.isNaN(count) ? 0 : count)
-    setMeasurementValues((prev) => {
-      const next = { ...prev }
-      if (v > 0) {
-        const vo2 = 5.857 * v - 19.458
-        next["30"] = Number.isFinite(vo2) ? vo2.toFixed(1) : ""
-      } else {
-        if (Object.prototype.hasOwnProperty.call(next, "30")) delete next["30"]
-      }
-      return next
-    })
-  }, [measurementValues["20"], age])
+  // 자동계산 훅 적용
+  // src/hooks/useAutoMeasurements.ts
+  // height, weight, age, measurementValues, setMeasurementValues
+  // import 필요
+  // ...existing code...
+  // 파일 상단에 추가: import { useAutoMeasurements } from "@/hooks/useAutoMeasurements"
+  useAutoMeasurements({ height, weight, age, measurementValues, setMeasurementValues });
 
   useEffect(() => {
     // 기본 정보는 이제 허리둘레 제외 (허리둘레는 측정 항목으로 이동)
