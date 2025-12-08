@@ -1,19 +1,22 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import { useAuth } from "@/hooks/useAuth"
-import { LoginModal } from "@/components/login-modal"
-import { SiteHeader } from "@/components/site-header"
-import { HeroSection } from "@/components/common/HeroSection"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Award, TrendingUp, Activity, BookOpen } from "lucide-react"
-import { YouTubeModal } from "@/components/youtube-modal"
-import { RecipeMetaHeader } from "@/components/recipe/RecipeMetaHeader"
-import { GradeResultCard } from "@/components/recipe/GradeResultCard"
-import { ExerciseVideoCard, ExerciseCommon } from "@/components/recipe/ExerciseVideoCard"
-import { ExercisePhaseSection } from "@/components/recipe/ExercisePhaseSection"
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { LoginModal } from "@/components/login-modal";
+import { SiteHeader } from "@/components/site-header";
+import { HeroSection } from "@/components/common/HeroSection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Award, TrendingUp, Activity, BookOpen, Target } from "lucide-react";
+import { YouTubeModal } from "@/components/youtube-modal";
+import { RecipeMetaHeader } from "@/components/recipe/RecipeMetaHeader";
+import { GradeResultCard } from "@/components/recipe/GradeResultCard";
+import {
+  ExerciseVideoCard,
+  ExerciseCommon,
+} from "@/components/recipe/ExerciseVideoCard";
+import { ExercisePhaseSection } from "@/components/recipe/ExercisePhaseSection";
 
 interface StrengthWeakness {
   category: string;
@@ -22,87 +25,95 @@ interface StrengthWeakness {
 
 interface MappedRecipe {
   meta: {
-    title: string
-    intro: string
-    difficulty: string
-    durationMin: number | null
-    fitnessGrade: string
-    percentile: number | null
-  }
-  strengths: StrengthWeakness[]
-  weaknesses: StrengthWeakness[]
-  warmup: ExerciseCommon[]
-  main: ExerciseCommon[]
-  cooldown: ExerciseCommon[]
+    title: string;
+    intro: string;
+    difficulty: string;
+    durationMin: number | null;
+    fitnessGrade: string;
+    percentile: number | null;
+  };
+  strengths: StrengthWeakness[];
+  weaknesses: StrengthWeakness[];
+  bodyParts: string[]; // 운동 부위
+  warmup: ExerciseCommon[];
+  main: ExerciseCommon[];
+  cooldown: ExerciseCommon[];
 }
 
 function parseDuration(raw: string | undefined | null): string | null {
-  if (!raw) return null
-  const parts = raw.split(":").map(p => p.trim()).filter(Boolean)
+  if (!raw) return null;
+  const parts = raw
+    .split(":")
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (parts.length === 1) {
-    const m = Number(parts[0])
-    return Number.isFinite(m) ? `${m}분` : raw
+    const m = Number(parts[0]);
+    return Number.isFinite(m) ? `${m}분` : raw;
   }
   if (parts.length === 2) {
-    const m = Number(parts[0])
-    const s = Number(parts[1])
-    if (Number.isFinite(m) && Number.isFinite(s)) return `${m}분 ${s}초`
-    return raw
+    const m = Number(parts[0]);
+    const s = Number(parts[1]);
+    if (Number.isFinite(m) && Number.isFinite(s)) return `${m}분 ${s}초`;
+    return raw;
   }
   if (parts.length === 3) {
-    const h = Number(parts[0])
-    const m = Number(parts[1])
-    const s = Number(parts[2])
+    const h = Number(parts[0]);
+    const m = Number(parts[1]);
+    const s = Number(parts[2]);
     if ([h, m, s].every(Number.isFinite)) {
-      const seg: string[] = []
-      if (h > 0) seg.push(`${h}시간`)
-      if (m > 0) seg.push(`${m}분`)
-      if (s > 0) seg.push(`${s}초`)
-      return seg.join(' ')
+      const seg: string[] = [];
+      if (h > 0) seg.push(`${h}시간`);
+      if (m > 0) seg.push(`${m}분`);
+      if (s > 0) seg.push(`${s}초`);
+      return seg.join(" ");
     }
-    return raw
+    return raw;
   }
-  return raw
+  return raw;
 }
 
 function extractVideoId(urlStr: string | undefined | null): string {
-  if (!urlStr) return ""
+  if (!urlStr) return "";
   try {
-    const url = new URL(urlStr)
+    const url = new URL(urlStr);
     if (url.hostname.includes("youtu")) {
-      if (url.searchParams.get("v")) return url.searchParams.get("v") || ""
-      const pathParts = url.pathname.split("/").filter(Boolean)
-      return pathParts[pathParts.length - 1] || ""
+      if (url.searchParams.get("v")) return url.searchParams.get("v") || "";
+      const pathParts = url.pathname.split("/").filter(Boolean);
+      return pathParts[pathParts.length - 1] || "";
     }
     // fallback: last path segment
-    const seg = url.pathname.split("/").filter(Boolean).pop()
-    return seg || ""
+    const seg = url.pathname.split("/").filter(Boolean).pop();
+    return seg || "";
   } catch {
-    return ""
+    return "";
   }
 }
 
-
 function mapAnalysis(raw: any): MappedRecipe | null {
-  if (!raw || typeof raw !== 'object') return null;
+  if (!raw || typeof raw !== "object") return null;
   const payload = raw?.data ?? raw?.result ?? raw;
-  const percentileCandidate = [
-    payload.fitness_percentile,
-    payload.grade_percentile,
-    payload.percentile,
-    payload.fitnessPercentile,
-  ].find((v) => typeof v === 'number' && v >= 0 && v <= 100) ?? null;
+  const percentileCandidate =
+    [
+      payload.fitness_percentile,
+      payload.grade_percentile,
+      payload.percentile,
+      payload.fitnessPercentile,
+    ].find((v) => typeof v === "number" && v >= 0 && v <= 100) ?? null;
   const strengths = payload.strengths || [];
   const weaknesses = payload.weaknesses || [];
+  const bodyParts = payload.body_parts || []; // 운동 부위
   const mapArray = (arr: any): ExerciseCommon[] => {
     if (!Array.isArray(arr)) return [];
     return arr.map((c: any): ExerciseCommon => {
       const videoId = extractVideoId(c.video_url);
       return {
-        name: c.name || c.exercise_name || '운동',
-        description: c.description || c.summary || '설명이 제공되지 않았습니다.',
+        name: c.name || c.exercise_name || "운동",
+        description:
+          c.description || c.summary || "설명이 제공되지 않았습니다.",
         videoId,
-        thumbUrl: videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null,
+        thumbUrl: videoId
+          ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+          : null,
         durationText: parseDuration(c.video_duration || c.duration),
         fitnessCategory: c.category || c.fitness_category || null,
         equipment: c.equipment || null,
@@ -113,30 +124,43 @@ function mapAnalysis(raw: any): MappedRecipe | null {
   };
   return {
     meta: {
-      title: payload.recipe_title || '맞춤 운동 레시피',
-      intro: payload.recipe_intro || payload.intro || '분석 결과를 기반으로 구성된 개인 맞춤형 루틴입니다.',
-      difficulty: payload.difficulty || '초급',
-      durationMin: typeof payload.duration_min === 'number' ? payload.duration_min : null,
-      fitnessGrade: payload.fitness_grade || payload.grade || '참가',
+      title: payload.recipe_title || "맞춤 운동 레시피",
+      intro:
+        payload.recipe_intro ||
+        payload.intro ||
+        "분석 결과를 기반으로 구성된 개인 맞춤형 루틴입니다.",
+      difficulty: payload.difficulty || "초급",
+      durationMin:
+        typeof payload.duration_min === "number" ? payload.duration_min : null,
+      fitnessGrade: payload.fitness_grade || payload.grade || "참가",
       percentile: percentileCandidate,
     },
     strengths: Array.isArray(strengths) ? strengths : [],
     weaknesses: Array.isArray(weaknesses) ? weaknesses : [],
+    bodyParts: Array.isArray(bodyParts) ? bodyParts : [],
     warmup: mapArray(
-      payload.warmup_exercises || payload.warmup || payload.warm_up_card_list || []
+      payload.warmup_exercises ||
+        payload.warmup ||
+        payload.warm_up_card_list ||
+        []
     ),
     main: mapArray(
       payload.main_exercises || payload.main || payload.main_card_list || []
     ),
     cooldown: mapArray(
-      payload.cooldown_exercises || payload.cooldown || payload.cool_down_card_list || []
+      payload.cooldown_exercises ||
+        payload.cooldown ||
+        payload.cool_down_card_list ||
+        []
     ),
   };
 }
 
 export default function Results() {
   const [analysis, setAnalysis] = useState<MappedRecipe | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<ExerciseCommon | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<ExerciseCommon | null>(
+    null
+  );
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const { isAuthenticated, login } = useAuth();
 
@@ -149,50 +173,66 @@ export default function Results() {
   useEffect(() => {
     if (!isAuthenticated) return;
     try {
-      const stored = typeof window !== 'undefined' ? sessionStorage.getItem('analysisResult') : null;
+      const stored =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("analysisResult")
+          : null;
       if (stored) {
         const raw = JSON.parse(stored);
         const mapped = mapAnalysis(raw);
-        if (mapped) { setAnalysis(mapped); return; }
+        if (mapped) {
+          setAnalysis(mapped);
+          return;
+        }
       }
-      const ls = typeof window !== 'undefined' ? localStorage.getItem('analysisResult') : null;
+      const ls =
+        typeof window !== "undefined"
+          ? localStorage.getItem("analysisResult")
+          : null;
       if (ls) {
         const raw = JSON.parse(ls);
         const mapped = mapAnalysis(raw);
-        if (mapped) { setAnalysis(mapped); return; }
+        if (mapped) {
+          setAnalysis(mapped);
+          return;
+        }
       }
       const sp = new URLSearchParams(window.location.search);
-      const qp = sp.get('analysis');
+      const qp = sp.get("analysis");
       if (qp) {
         try {
           const decoded = decodeURIComponent(qp);
           const raw = JSON.parse(decoded);
           const mapped = mapAnalysis(raw);
-          if (mapped) { setAnalysis(mapped); return; }
+          if (mapped) {
+            setAnalysis(mapped);
+            return;
+          }
         } catch {}
       }
     } catch (e) {
-      console.error('Failed to load analysisResult', e);
+      console.error("Failed to load analysisResult", e);
     }
   }, [isAuthenticated]);
 
   const getFallback = (): MappedRecipe => ({
     meta: {
-      title: '기초 유연성 향상 프로그램',
-      intro: '전신 유연성을 단계적으로 향상시키는 스트레칭 루틴입니다.',
-      difficulty: '초급',
+      title: "기초 유연성 향상 프로그램",
+      intro: "전신 유연성을 단계적으로 향상시키는 스트레칭 루틴입니다.",
+      difficulty: "초급",
       durationMin: 30,
-      fitnessGrade: '참가',
+      fitnessGrade: "참가",
       percentile: null,
     },
     strengths: [
-      { category: '근력', level: '우수' },
-      { category: '지구력', level: '양호' },
+      { category: "근력", level: "우수" },
+      { category: "지구력", level: "양호" },
     ],
     weaknesses: [
-      { category: '유연성', level: '보통' },
-      { category: '순발력', level: '보통' },
+      { category: "유연성", level: "보통" },
+      { category: "순발력", level: "보통" },
     ],
+    bodyParts: ["전신", "상체", "하체"],
     warmup: [],
     main: [],
     cooldown: [],
@@ -231,37 +271,18 @@ export default function Results() {
       />
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="mx-auto max-w-4xl">
-          <GradeResultCard grade={data.meta.fitnessGrade} percentile={data.meta.percentile} />
+          <GradeResultCard
+            grade={data.meta.fitnessGrade}
+            percentile={data.meta.percentile}
+          />
 
-          {/* 강점/개선/순위 카드 */}
+          {/* 개선필요/운동부위/순위 카드 */}
           <div className="mb-12 grid gap-6 md:grid-cols-3">
             <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />강점
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {data.strengths && data.strengths.length > 0 ? (
-                  <ul className="space-y-2 text-sm">
-                    {data.strengths.map((item, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="text-primary">•</span>
-                        <span className="text-muted-foreground">
-                          {item.category}: {item.level}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">강점 데이터가 없습니다</p>
-                )}
-              </CardContent>
-            </Card>
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-accent" />개선 필요
+                  <Activity className="h-5 w-5 text-accent" />
+                  개선 필요
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -277,20 +298,51 @@ export default function Results() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-muted-foreground">개선 필요 데이터가 없습니다</p>
+                  <p className="text-sm text-muted-foreground">
+                    개선 필요 데이터가 없습니다
+                  </p>
                 )}
               </CardContent>
             </Card>
             <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />전체 순위
+                  <Target className="h-5 w-5 text-primary" />
+                  운동 부위
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.bodyParts && data.bodyParts.length > 0 ? (
+                  <ul className="space-y-2 text-sm">
+                    {data.bodyParts.map((bodyPart, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span className="text-muted-foreground">
+                          {bodyPart}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    운동 부위 데이터가 없습니다
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-primary" />
+                  전체 순위
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center">
                   <p className="mb-1 text-3xl font-bold text-primary">
-                    {data.meta.percentile != null ? `${data.meta.percentile}%` : '35%'}
+                    {data.meta.percentile != null
+                      ? `${data.meta.percentile}%`
+                      : "35%"}
                   </p>
                   <p className="text-sm text-muted-foreground">상위 랭킹</p>
                 </div>
@@ -301,37 +353,68 @@ export default function Results() {
           <Card className="mb-12 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
             <CardContent className="p-8">
               <RecipeMetaHeader
-                category={data.meta.fitnessGrade || '맞춤 레시피'}
+                category={data.meta.fitnessGrade || "맞춤 레시피"}
                 title={data.meta.title}
                 intro={data.meta.intro}
                 durationMin={data.meta.durationMin}
                 difficulty={data.meta.difficulty}
-                totalExercises={data.warmup.length + data.main.length + data.cooldown.length}
+                totalExercises={
+                  data.warmup.length + data.main.length + data.cooldown.length
+                }
               />
 
               {data.warmup.length > 0 && (
-                <ExercisePhaseSection title="준비운동" color="green" count={data.warmup.length} gridClassName="grid gap-4 sm:grid-cols-2">
-                  {data.warmup.map(ex => (
-                    <ExerciseVideoCard key={ex.videoId + ex.name} exercise={ex} onOpen={setSelectedVideo} />
+                <ExercisePhaseSection
+                  title="준비운동"
+                  color="green"
+                  count={data.warmup.length}
+                  gridClassName="grid gap-4 sm:grid-cols-2"
+                >
+                  {data.warmup.map((ex) => (
+                    <ExerciseVideoCard
+                      key={ex.videoId + ex.name}
+                      exercise={ex}
+                      onOpen={setSelectedVideo}
+                    />
                   ))}
                 </ExercisePhaseSection>
               )}
               {data.main.length > 0 && (
-                <ExercisePhaseSection title="본운동" color="primary" count={data.main.length}>
-                  {data.main.map(ex => (
-                    <ExerciseVideoCard key={ex.videoId + ex.name} exercise={ex} onOpen={setSelectedVideo} />
+                <ExercisePhaseSection
+                  title="본운동"
+                  color="primary"
+                  count={data.main.length}
+                >
+                  {data.main.map((ex) => (
+                    <ExerciseVideoCard
+                      key={ex.videoId + ex.name}
+                      exercise={ex}
+                      onOpen={setSelectedVideo}
+                    />
                   ))}
                 </ExercisePhaseSection>
               )}
               {data.cooldown.length > 0 && (
-                <ExercisePhaseSection title="정리운동" color="blue" count={data.cooldown.length} gridClassName="grid gap-4 sm:grid-cols-2" sectionClassName="mb-0">
-                  {data.cooldown.map(ex => (
-                    <ExerciseVideoCard key={ex.videoId + ex.name} exercise={ex} onOpen={setSelectedVideo} />
+                <ExercisePhaseSection
+                  title="정리운동"
+                  color="blue"
+                  count={data.cooldown.length}
+                  gridClassName="grid gap-4 sm:grid-cols-2"
+                  sectionClassName="mb-0"
+                >
+                  {data.cooldown.map((ex) => (
+                    <ExerciseVideoCard
+                      key={ex.videoId + ex.name}
+                      exercise={ex}
+                      onOpen={setSelectedVideo}
+                    />
                   ))}
                 </ExercisePhaseSection>
               )}
               {allExercises.length === 0 && (
-                <p className="text-sm text-muted-foreground">추천 운동 데이터가 아직 없습니다.</p>
+                <p className="text-sm text-muted-foreground">
+                  추천 운동 데이터가 아직 없습니다.
+                </p>
               )}
             </CardContent>
           </Card>
@@ -339,13 +422,18 @@ export default function Results() {
           <Card className="border-primary/20 bg-primary/5 mb-16">
             <CardContent className="flex flex-col items-center gap-6 p-8 text-center md:flex-row md:justify-between md:text-left">
               <div>
-                <h3 className="mb-2 text-xl font-bold text-foreground">지금 바로 운동을 시작하세요!</h3>
-                <p className="text-sm text-muted-foreground">맞춤형 운동 레시피와 주변 시설 정보를 확인하세요</p>
+                <h3 className="mb-2 text-xl font-bold text-foreground">
+                  지금 바로 운동을 시작하세요!
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  맞춤형 운동 레시피와 주변 시설 정보를 확인하세요
+                </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button asChild>
                   <Link to="/recipes">
-                    <BookOpen className="mr-2 h-4 w-4" />운동 레시피 보기
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    운동 레시피 보기
                   </Link>
                 </Button>
                 <Button variant="outline" asChild>
@@ -363,11 +451,16 @@ export default function Results() {
           onClose={() => setSelectedVideo(null)}
           title={selectedVideo.name}
           videoId={selectedVideo.videoId}
-          playlist={allExercises.map(ex => ({ name: ex.name, videoId: ex.videoId }))}
-          currentIndex={allExercises.findIndex(ex => ex.videoId === selectedVideo.videoId)}
+          playlist={allExercises.map((ex) => ({
+            name: ex.name,
+            videoId: ex.videoId,
+          }))}
+          currentIndex={allExercises.findIndex(
+            (ex) => ex.videoId === selectedVideo.videoId
+          )}
           onNavigate={(nextIdx) => {
-            if (nextIdx < 0 || nextIdx >= allExercises.length) return
-            setSelectedVideo(allExercises[nextIdx])
+            if (nextIdx < 0 || nextIdx >= allExercises.length) return;
+            setSelectedVideo(allExercises[nextIdx]);
           }}
         />
       )}
