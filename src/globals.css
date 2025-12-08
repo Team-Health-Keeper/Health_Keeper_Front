@@ -210,10 +210,12 @@
   /* Adding smooth scroll behavior globally */
   html {
     scroll-behavior: smooth;
+    line-height: 0.5;
   }
 
   body {
     @apply bg-background text-foreground;
+    line-height: 0.5;
   }
 
   /* Adding scroll fade-in animation styles */

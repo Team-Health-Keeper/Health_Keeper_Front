@@ -1,32 +1,32 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Activity, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Activity, ChevronLeft, ChevronRight } from "lucide-react";
 import type {
   GrassData,
   GrassDetail,
   CalendarDay,
   MonthlyCalendarDay,
-} from './types';
+} from "./types";
 
 interface GrassCalendarProps {
   grass: GrassData[];
 }
 
 const MONTH_NAMES = [
-  '1월',
-  '2월',
-  '3월',
-  '4월',
-  '5월',
-  '6월',
-  '7월',
-  '8월',
-  '9월',
-  '10월',
-  '11월',
-  '12월',
+  "1월",
+  "2월",
+  "3월",
+  "4월",
+  "5월",
+  "6월",
+  "7월",
+  "8월",
+  "9월",
+  "10월",
+  "11월",
+  "12월",
 ];
 
 export function GrassCalendar({ grass }: GrassCalendarProps) {
@@ -56,7 +56,7 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
         // 로컬 시간대 기준 YYYY-MM-DD 문자열 생성
         const dateStr = `${dateObj.getFullYear()}-${String(
           dateObj.getMonth() + 1
-        ).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+        ).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
         map.set(dateStr, g);
       });
     }
@@ -96,7 +96,7 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
         // 로컬 시간대 기준 YYYY-MM-DD 문자열 생성
         const dateStr = `${date.getFullYear()}-${String(
           date.getMonth() + 1
-        ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
         const grassItem = grassMap.get(dateStr);
         const attendance = grassItem?.attendance ?? false;
@@ -166,7 +166,7 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
       // 로컬 시간대 기준 YYYY-MM-DD 문자열 생성
       const dateStr = `${current.getFullYear()}-${String(
         current.getMonth() + 1
-      ).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+      ).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
       const grassItem = grassMap.get(dateStr);
       const attendance = grassItem?.attendance ?? false;
       const videoWatch = grassItem?.videoWatch ?? false;
@@ -203,9 +203,9 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
       el.scrollLeft = el.scrollWidth;
       if (todayCellRef.current) {
         todayCellRef.current.scrollIntoView({
-          behavior: 'auto',
-          inline: 'end',
-          block: 'nearest',
+          behavior: "auto",
+          inline: "end",
+          block: "nearest",
         });
       }
     } else {
@@ -323,7 +323,7 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
 
           {/* 요일 헤더 */}
           <div className="grid grid-cols-7 gap-1 mb-2">
-            {['월', '화', '수', '목', '금', '토', '일'].map((day) => (
+            {["월", "화", "수", "목", "금", "토", "일"].map((day) => (
               <div
                 key={day}
                 className="text-center text-xs text-muted-foreground font-medium py-1"
@@ -341,18 +341,18 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
                 type="button"
                 className={`aspect-square rounded-md flex items-center justify-center text-xs font-medium transition-all ${
                   !day.isCurrentMonth
-                    ? 'text-muted-foreground/30'
+                    ? "text-muted-foreground/30"
                     : day.intensity === 0
-                    ? 'bg-muted text-muted-foreground'
+                    ? "bg-muted text-muted-foreground"
                     : day.intensity === 1
-                    ? 'bg-primary/30 text-primary-foreground'
+                    ? "bg-primary/30 text-primary-foreground"
                     : day.intensity === 2
-                    ? 'bg-primary/60 text-primary-foreground'
-                    : 'bg-primary text-primary-foreground'
+                    ? "bg-primary/60 text-primary-foreground"
+                    : "bg-primary text-primary-foreground"
                 } ${
                   day.isCurrentMonth
-                    ? 'cursor-pointer active:scale-95'
-                    : 'cursor-default'
+                    ? "cursor-pointer active:scale-95"
+                    : "cursor-default"
                 }`}
                 disabled={!day.isCurrentMonth}
                 onClick={() => {
@@ -385,29 +385,29 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
                 <span
                   className={`px-2 py-1 rounded ${
                     activeDetail.attendance
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted text-muted-foreground'
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  출석 {activeDetail.attendance ? 'O' : 'X'}
+                  출석 {activeDetail.attendance ? "O" : "X"}
                 </span>
                 <span
                   className={`px-2 py-1 rounded ${
                     activeDetail.videoWatch
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted text-muted-foreground'
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  영상 {activeDetail.videoWatch ? 'O' : 'X'}
+                  영상 {activeDetail.videoWatch ? "O" : "X"}
                 </span>
                 <span
                   className={`px-2 py-1 rounded ${
                     activeDetail.measurement
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted text-muted-foreground'
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  측정 {activeDetail.measurement ? 'O' : 'X'}
+                  측정 {activeDetail.measurement ? "O" : "X"}
                 </span>
               </div>
             </div>
@@ -416,10 +416,10 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
           {/* 범례 */}
           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <span>적음</span>
-            <div className="h-4 w-4 rounded bg-muted" />
-            <div className="h-4 w-4 rounded bg-primary/30" />
-            <div className="h-4 w-4 rounded bg-primary/60" />
-            <div className="h-4 w-4 rounded bg-primary" />
+            <div className="h-4 w-4 rounded-[2px] bg-muted" />
+            <div className="h-4 w-4 rounded-[2px] bg-primary/30" />
+            <div className="h-4 w-4 rounded-[2px] bg-primary/60" />
+            <div className="h-4 w-4 rounded-[2px] bg-primary" />
             <span>많음</span>
           </div>
         </div>
@@ -452,9 +452,9 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
                             const today = new Date();
                             const todayStr = `${today.getFullYear()}-${String(
                               today.getMonth() + 1
-                            ).padStart(2, '0')}-${String(
+                            ).padStart(2, "0")}-${String(
                               today.getDate()
-                            ).padStart(2, '0')}`;
+                            ).padStart(2, "0")}`;
                             if (day.date === todayStr) {
                               todayCellRef.current = node;
                             }
@@ -463,20 +463,20 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
                       >
                         <button
                           type="button"
-                          className={`h-3 w-3 rounded-sm ${
+                          className={`h-3 w-3 rounded-[2px] ${
                             !day.isCurrentYear
-                              ? 'bg-transparent'
+                              ? "bg-transparent"
                               : day.intensity === 0
-                              ? 'bg-muted'
+                              ? "bg-muted"
                               : day.intensity === 1
-                              ? 'bg-primary/30'
+                              ? "bg-primary/30"
                               : day.intensity === 2
-                              ? 'bg-primary/60'
-                              : 'bg-primary'
+                              ? "bg-primary/60"
+                              : "bg-primary"
                           } transition-colors ${
                             day.isCurrentYear
-                              ? 'cursor-pointer'
-                              : 'cursor-default'
+                              ? "cursor-pointer"
+                              : "cursor-default"
                           }`}
                           disabled={!day.isCurrentYear}
                           onMouseEnter={(e) => {
@@ -529,11 +529,11 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
                           aria-label={
                             day.isCurrentYear
                               ? `${day.date} 출석 ${
-                                  day.attendance ? 'O' : 'X'
+                                  day.attendance ? "O" : "X"
                                 }, 영상 시청 ${
-                                  day.videoWatch ? 'O' : 'X'
-                                }, 체력 측정 ${day.measurement ? 'O' : 'X'}`
-                              : ''
+                                  day.videoWatch ? "O" : "X"
+                                }, 체력 측정 ${day.measurement ? "O" : "X"}`
+                              : ""
                           }
                         />
                       </div>
@@ -550,13 +550,13 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
                   style={{
                     left: tooltipPos.x,
                     top: tooltipPos.y,
-                    transform: 'translate(-50%, -100%)',
+                    transform: "translate(-50%, -100%)",
                   }}
                 >
-                  {activeDetail.date} · 출석{' '}
-                  {activeDetail.attendance ? 'O' : 'X'} · 영상{' '}
-                  {activeDetail.videoWatch ? 'O' : 'X'} · 측정{' '}
-                  {activeDetail.measurement ? 'O' : 'X'}
+                  {activeDetail.date} · 출석{" "}
+                  {activeDetail.attendance ? "O" : "X"} · 영상{" "}
+                  {activeDetail.videoWatch ? "O" : "X"} · 측정{" "}
+                  {activeDetail.measurement ? "O" : "X"}
                 </div>,
                 document.body
               )}
@@ -564,10 +564,10 @@ export function GrassCalendar({ grass }: GrassCalendarProps) {
           {/* 범례 - 스크롤 영역 밖에 고정 */}
           <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
             <span>적음</span>
-            <div className="h-3 w-3 rounded-sm bg-muted" />
-            <div className="h-3 w-3 rounded-sm bg-primary/30" />
-            <div className="h-3 w-3 rounded-sm bg-primary/60" />
-            <div className="h-3 w-3 rounded-sm bg-primary" />
+            <div className="h-3 w-3 rounded-[2px] bg-muted" />
+            <div className="h-3 w-3 rounded-[2px] bg-primary/30" />
+            <div className="h-3 w-3 rounded-[2px] bg-primary/60" />
+            <div className="h-3 w-3 rounded-[2px] bg-primary" />
             <span>많음</span>
           </div>
         </div>
